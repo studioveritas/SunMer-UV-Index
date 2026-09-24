@@ -1,0 +1,66 @@
+/*
+ * GREYBOX LAYER — structure only.
+ * Every visual decision lives in these tokens so the creative look & feel
+ * can be dropped in later without touching components.
+ */
+:root {
+  --bg: #ffffff;
+  --fg: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e2e2e2;
+  --surface: #f6f6f6;
+  --focus: #1f5fd6;
+
+  /* WHO UV index colours (the public-health standard — keep these semantic) */
+  --uv-low: #289500;
+  --uv-moderate: #f7e400;
+  --uv-high: #f85900;
+  --uv-very-high: #d8001d;
+  --uv-extreme: #6b49c8;
+
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-figure: ui-rounded, system-ui, sans-serif;
+  --radius: 6px;
+  --space: 1rem;
+  --measure: 72rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121212;
+    --fg: #ededed;
+    --muted: #a0a0a0;
+    --line: #2c2c2c;
+    --surface: #1c1c1c;
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-body); line-height: 1.5; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+main { max-width: var(--measure); margin: 0 auto; padding: calc(var(--space) * 2) var(--space); }
+h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin: 0 0 .25rem; }
+.lede { color: var(--muted); margin: 0 0 2rem; max-width: 60ch; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: .6rem .5rem; border-bottom: 1px solid var(--line); vertical-align: middle; }
+th { font-weight: 600; color: var(--muted); font-size: .85rem; }
+td.num { font-family: var(--font-figure); font-size: 1.4rem; font-weight: 700; }
+
+.swatch { display: inline-block; width: .8rem; height: .8rem; border-radius: 50%; margin-right: .4rem; vertical-align: -1px; }
+.uv-low { background: var(--uv-low); }
+.uv-moderate { background: var(--uv-moderate); }
+.uv-high { background: var(--uv-high); }
+.uv-very-high { background: var(--uv-very-high); }
+.uv-extreme { background: var(--uv-extreme); }
+
+.dots { display: flex; gap: .25rem; }
+.dot { width: .55rem; height: .55rem; border-radius: 50%; background: var(--line); }
+.dot.ok { background: var(--fg); }
+.dot.error { background: var(--uv-very-high); }
+
+.meta { color: var(--muted); font-size: .85rem; }
+.panel { background: var(--surface); border-radius: var(--radius); padding: var(--space); margin: var(--space) 0; }
+footer { max-width: var(--measure); margin: 2rem auto; padding: var(--space); color: var(--muted); font-size: .8rem; border-top: 1px solid var(--line); }
