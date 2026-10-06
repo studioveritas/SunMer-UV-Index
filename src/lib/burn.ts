@@ -35,18 +35,56 @@ export function effectiveSpf(spf: number, application: "label" | "real-life"): n
   return application === "label" ? spf : Math.pow(spf, 1 / 2);
 }
 
-function uviAt(curve: HourlyValue[], t: number): number {
-  // Hourly values are treated as the hour's centre; linear interpolation between them.
+/**
+ * A UV curve of instants: each point is the UV at that moment.
+ * Hourly forecasts are converted by placing each value at the middle of its hour.
+ */
+export type UvCurve = { time: string; uvi: number }[];
+
+export function fromHourly(hourly: HourlyValue[]): UvCurve {
+  return hourly.map((h) => ({ time: new Date(Date.parse(h.time) + 30 * 60_000).toISOString(), uvi: h.uvi }));
+}
+
+/**
+ * Measured beats modelled: use observed points up to the latest observation,
+ * then the forecast. Observed series are quarter-hourly KNMI values.
+ */
+export function mergeObserved(forecast: UvCurve, observed: { time: string; uvi: number | null }[]): UvCurve {
+  const obs = observed.filter((p): p is { time: string; uvi: number } => p.uvi !== null && Date.parse(p.time) <= Date.now());
+  if (!obs.length) return forecast;
+  const cut = Date.parse(obs[obs.length - 1].time);
+  return [...obs, ...forecast.filter((f) => Date.parse(f.time) > cut)].sort((a, b) => a.time.localeCompare(b.time));
+}
+
+export function uviAt(curve: UvCurve, t: number): number {
   if (curve.length === 0) return 0;
-  const pts = curve.map((h) => ({ t: Date.parse(h.time) + 30 * 60_000, v: h.uvi }));
-  if (t <= pts[0].t) return t < pts[0].t - 3600_000 ? 0 : pts[0].v;
-  for (let i = 1; i < pts.length; i++) {
-    if (t <= pts[i].t) {
-      const f = (t - pts[i - 1].t) / (pts[i].t - pts[i - 1].t);
-      return pts[i - 1].v + f * (pts[i].v - pts[i - 1].v);
+  const first = Date.parse(curve[0].time);
+  const last = Date.parse(curve[curve.length - 1].time);
+  if (t < first) return t < first - 3600_000 ? 0 : curve[0].uvi;
+  if (t > last) return t > last + 3600_000 ? 0 : curve[curve.length - 1].uvi;
+  for (let i = 1; i < curve.length; i++) {
+    const t1 = Date.parse(curve[i].time);
+    if (t <= t1) {
+      const t0 = Date.parse(curve[i - 1].time);
+      const f = t1 === t0 ? 1 : (t - t0) / (t1 - t0);
+      return curve[i - 1].uvi + f * (curve[i].uvi - curve[i - 1].uvi);
     }
   }
-  return t > pts[pts.length - 1].t + 3600_000 ? 0 : pts[pts.length - 1].v;
+  return curve[curve.length - 1].uvi;
+}
+
+/** Erythemal dose in J/m² between two instants (1 UVI = 0.025 W/m²), divided by SPF. */
+export function doseBetween(curve: UvCurve, start: number, end: number, spf = 1): number {
+  let dose = 0;
+  for (let t = start; t < end; t += 60_000) {
+    const step = Math.min(60_000, end - t);
+    dose += (uviAt(curve, t + step / 2) * 0.025 * (step / 1000)) / spf;
+  }
+  return dose;
+}
+
+export function medFor(skin: SkinTypeId): number {
+  return SKIN_TYPES.find((s) => s.id === skin)!.med;
 }
 
 /**
@@ -54,14 +92,15 @@ function uviAt(curve: HourlyValue[], t: number): number {
  * reached within `horizonHours` (i.e. "unlikely to burn today").
  */
 export function burnMinutes(
-  curve: HourlyValue[],
+  curve: UvCurve,
   start: Date,
   skin: SkinTypeId,
   spf = 1,
   horizonHours = 10,
+  alreadyReceived = 0,
 ): number | null {
-  const med = SKIN_TYPES.find((s) => s.id === skin)!.med;
-  let dose = 0;
+  const med = medFor(skin);
+  let dose = alreadyReceived;
   const t0 = start.getTime();
   for (let m = 1; m <= horizonHours * 60; m++) {
     dose += (uviAt(curve, t0 + (m - 0.5) * 60_000) * 0.025 * 60) / spf;
@@ -71,13 +110,13 @@ export function burnMinutes(
 }
 
 /** Start time of the hour with the highest UV (for "burn time at peak"). */
-export function peakStart(curve: HourlyValue[], from: Date, to: Date): Date | null {
+export function peakStart(curve: UvCurve, from: Date, to: Date): Date | null {
   const window = curve.filter((h) => {
     const t = Date.parse(h.time);
     return t >= from.getTime() && t < to.getTime();
   });
   if (!window.length) return null;
   const top = window.reduce((a, b) => (b.uvi > a.uvi ? b : a));
-  // Centre the exposure on the peak: start 30 min before the peak hour's midpoint.
-  return new Date(Date.parse(top.time));
+  // Centre a one-hour exposure on the peak.
+  return new Date(Date.parse(top.time) - 30 * 60_000);
 }

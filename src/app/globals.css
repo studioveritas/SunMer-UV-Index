@@ -4,6 +4,7 @@
  * monospaced caps for labels, thin gradient gauges.
  */
 :root {
+  --sky-day: #c4cfea;
   --sky: #c4cfea;
   --lavender: #c9b6d3;
   --gold: #e3bb5a;
@@ -45,7 +46,7 @@ button { font: inherit; color: inherit; }
     radial-gradient(ellipse calc(40% * var(--s)) calc(82% * var(--s)) at 42% 102%, var(--core) 0%, transparent 72%),
     radial-gradient(ellipse calc(44% * var(--s)) calc(88% * var(--s)) at 63% 104%, var(--mid) 0%, transparent 74%),
     radial-gradient(ellipse calc(66% * var(--s)) calc(125% * var(--s)) at 55% 108%, var(--outer) 0%, transparent 80%),
-    var(--sky);
+    var(--sky-now, var(--sky));
 }
 .sky .status { position: absolute; top: var(--gutter); left: var(--gutter); display: grid; gap: .9rem; list-style: none; margin: 0; padding: 0; }
 .status li { width: .85rem; height: .85rem; border-radius: 50%; border: 1.5px solid #fff; }
@@ -136,3 +137,52 @@ footer { max-width: var(--measure); margin: 0 auto; padding: 2rem var(--gutter) 
   .sky { animation: rise 1.6s ease-out both; }
   @keyframes rise { from { background-position: 0 3rem; opacity: .6; } to { background-position: 0 0; opacity: 1; } }
 }
+
+/* ---------- Night mode: the page follows the sun ---------- */
+body:has(.page[data-phase="night"]) {
+  --paper: #121426;
+  --ink: #ebe8f4;
+  --muted: #8d90b3;
+  --rule: #272a46;
+  --sky: #2a2d55;
+  --periwinkle: #5d5fa8;
+  color-scheme: dark;
+}
+body:has(.page[data-phase="night"]) .bar { background: #1e2140; }
+body:has(.page[data-phase="night"]) .cities .track { background: #22253f; }
+body:has(.page[data-phase="night"]) .chip[aria-pressed="true"],
+body:has(.page[data-phase="night"]) .action { background: var(--ink); color: var(--paper); }
+.page[data-phase="night"] .status li { border-color: #5d5fa8; }
+.page[data-phase="dusk"] .sky .label, .page[data-phase="night"] .sky .label { color: #f3f0fa; }
+.stars { position: absolute; inset: 0; background-image:
+  radial-gradient(1.5px 1.5px at 12% 22%, #fff9 50%, transparent 51%),
+  radial-gradient(1px 1px at 28% 12%, #fff8 50%, transparent 51%),
+  radial-gradient(1.5px 1.5px at 46% 30%, #fff7 50%, transparent 51%),
+  radial-gradient(1px 1px at 63% 16%, #fff9 50%, transparent 51%),
+  radial-gradient(1.2px 1.2px at 78% 26%, #fff8 50%, transparent 51%),
+  radial-gradient(1px 1px at 88% 9%, #fff7 50%, transparent 51%),
+  radial-gradient(1px 1px at 36% 44%, #fff6 50%, transparent 51%),
+  radial-gradient(1.2px 1.2px at 71% 41%, #fff6 50%, transparent 51%); }
+
+/* ---------- Best hours band ---------- */
+.band { position: relative; display: flex; height: 2.4rem; border-radius: 1.2rem; overflow: hidden; margin-top: .8rem; }
+.band span { height: 100%; }
+.band .dark { background: #c9cbe0; }
+.band .low { background: linear-gradient(180deg, #dfe6f6, var(--sky-day)); }
+.band .moderate { background: linear-gradient(180deg, #f1e3a0, var(--gold)); }
+.band .high { background: linear-gradient(180deg, #ecae7a, var(--scarlet)); }
+.band .now { position: absolute; top: -.2rem; bottom: -.2rem; width: 2px; background: var(--ink); }
+body:has(.page[data-phase="night"]) .band .dark { background: #23264a; }
+.band-scale { display: flex; justify-content: space-between; font-family: var(--font-label); font-size: .68rem; color: var(--muted); margin-top: .4rem; }
+
+/* ---------- Dose log ---------- */
+.sessions { list-style: none; margin: .8rem 0 0; padding: 0; font-family: var(--font-label); font-size: .78rem; }
+.sessions li { display: flex; justify-content: space-between; align-items: center; padding: .5rem 0; border-top: 1px solid var(--rule); }
+.sessions button { background: none; border: 0; cursor: pointer; color: var(--muted); font-family: var(--font-label); font-size: .72rem; text-transform: uppercase; }
+
+/* ---------- Validation ---------- */
+.prose { max-width: 38rem; font-size: 1.05rem; line-height: 1.55; }
+.prose p { margin: 0 0 1rem; }
+.metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.5rem; }
+@media (max-width: 560px) { .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+body:has(.page[data-phase="night"]) .bar .fill { background: linear-gradient(90deg, #4a3f6e, #5d5fa8); }

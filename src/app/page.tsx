@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getAllCitiesUv } from "@/lib/service";
 import { displayDate } from "@/lib/palette";
 import { PaletteDots, Sky } from "./ui";
+import { getCity } from "@/lib/config/cities";
+import { sunInfo } from "@/lib/service";
 
 export const revalidate = 900;
 
@@ -9,10 +11,11 @@ export default async function Home() {
   const cities = await getAllCitiesUv();
   const ranked = [...cities].sort((a, b) => (b.consensus.todayMax ?? -1) - (a.consensus.todayMax ?? -1));
   const top = ranked[0]?.consensus.todayMax ?? null;
+  const { phase } = sunInfo(getCity("amsterdam")!);
 
   return (
-    <>
-      <Sky uvi={top} />
+    <div className="page" data-phase={phase}>
+      <Sky uvi={top} phase={phase} />
       <main className="panel">
         <div className="head">
           <div>
@@ -44,7 +47,10 @@ export default async function Home() {
             </li>
           ))}
         </ol>
+        <p className="note" style={{ marginTop: "2rem" }}>
+          <Link href="/ground-truth">How accurate is this? We check satellite and forecasts against RIVM's ground station every day.</Link>
+        </p>
       </main>
-    </>
+    </div>
   );
 }

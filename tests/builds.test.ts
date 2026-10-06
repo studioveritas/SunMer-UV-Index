@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { burnMinutes, effectiveSpf } from "@/lib/burn";
+import { burnMinutes, effectiveSpf, fromHourly } from "@/lib/burn";
 import { buildHourlyCurve, buildOutlook } from "@/lib/consensus";
 import { decideAlert } from "@/lib/alerts";
 import { decodeCfTime, extractCities, inBenelux } from "@/lib/providers/knmiObserved";
@@ -12,13 +12,13 @@ const flat = (uvi: number, hours = 12) =>
 describe("burn time", () => {
   it("matches the closed form at constant UV", () => {
     // Type II, MED 250 J/m²; UVI 6 -> 0.15 W/m² -> 250/0.15 s = 27.8 min
-    expect(burnMinutes(flat(6), new Date(Date.UTC(2026, 6, 1, 9)), 2)).toBe(28);
+    expect(burnMinutes(fromHourly(flat(6)), new Date(Date.UTC(2026, 6, 1, 9)), 2)).toBe(28);
   });
   it("scales with SPF", () => {
-    expect(burnMinutes(flat(6), new Date(Date.UTC(2026, 6, 1, 9)), 2, 2)).toBe(56);
+    expect(burnMinutes(fromHourly(flat(6)), new Date(Date.UTC(2026, 6, 1, 9)), 2, 2)).toBe(56);
   });
   it("returns null when the dose isn't reached", () => {
-    expect(burnMinutes(flat(0.5, 4), new Date(Date.UTC(2026, 6, 1, 9)), 6)).toBeNull();
+    expect(burnMinutes(fromHourly(flat(0.5, 4)), new Date(Date.UTC(2026, 6, 1, 9)), 6)).toBeNull();
   });
   it("real-life sunscreen is far weaker than the label", () => {
     expect(effectiveSpf(50, "label")).toBe(50);

@@ -4,6 +4,9 @@ import { emptyReading } from "./providers/base";
 import { buildConsensus, buildHourlyCurve, buildOutlook } from "./consensus";
 import { dailyMaxFromHourly, localDate, round1 } from "./time";
 import { inBenelux } from "./providers/knmiObserved";
+import { fromHourly, mergeObserved } from "./burn";
+import { skyPhase, sunTimes } from "./sun";
+import type { ValidationData } from "./validation";
 
 /**
  * Demo mode (UV_DEMO=1): plausible synthetic readings so design and QA can
@@ -69,7 +72,11 @@ export function demoCityUv(city: City): CityUv {
     : [];
   const valid = observedSeries.filter((p) => p.uvi !== null) as { time: string; uvi: number }[];
 
+  const sunT = sunTimes(new Date(), city.lat, city.lon);
   return {
+    uvCurve: mergeObserved(fromHourly(hourlyCurve), observedSeries),
+    sun: { sunrise: sunT.sunrise?.toISOString() ?? null, sunset: sunT.sunset?.toISOString() ?? null, dusk: sunT.dusk?.toISOString() ?? null },
+    phase: skyPhase(new Date(), city.lat, city.lon),
     city,
     readings,
     consensus: valid.length ? { ...consensus, current: valid[valid.length - 1].uvi, currentSource: "observed" } : consensus,
@@ -79,5 +86,41 @@ export function demoCityUv(city: City): CityUv {
       ? { source: "knmi-benelux", status: "ok", series: observedSeries, latest: valid.at(-1) ?? null, peakSoFar: valid.length ? Math.max(...valid.map((v) => v.uvi)) : null, fileTime: null }
       : { source: "knmi-benelux", status: "not_covered", series: [], latest: null, peakSoFar: null, fileTime: null },
     generatedAt: new Date().toISOString(),
+  };
+}
+
+/** Synthetic ground-vs-satellite day plus a 45-day scoreboard, for design review. */
+export async function demoValidation(): Promise<ValidationData> {
+  const { BILTHOVEN, pairSeries, stats, groundDailyPeak } = await import("./validation");
+  const uv = demoCityUv(BILTHOVEN);
+  const rnd = seed("validation");
+  const today = localDate(new Date(), BILTHOVEN.tz);
+  const satellite = uv.observed.series.length ? uv.observed.series : demoCityUv({ ...BILTHOVEN, slug: "amsterdam" }).observed.series;
+  const ground = satellite
+    .filter((p) => p.uvi !== null)
+    .flatMap((p) => [0, 11].map((m) => ({
+      time: new Date(Date.parse(p.time) + m * 60_000).toISOString(),
+      uvi: round1(Math.max(0, (p.uvi as number) * (0.88 + rnd() * 0.2) + (rnd() - 0.5) * 0.15)),
+      instrument: "nlb",
+    })));
+  const sat = satellite.filter((s) => s.uvi !== null) as { time: string; uvi: number }[];
+  const rows = [
+    { source: "consensus", kind: "cloud-adjusted", bias: 0.12, mae: 0.41 },
+    { source: "cams", kind: "cloud-adjusted", bias: 0.31, mae: 0.52 },
+    { source: "met-office", kind: "cloud-adjusted", bias: -0.08, mae: 0.47 },
+    { source: "dwd", kind: "cloud-adjusted", bias: 0.22, mae: 0.6 },
+    { source: "knmi-temis", kind: "clear-sky", bias: 1.35, mae: 1.41 },
+    { source: "met-norway", kind: "clear-sky", bias: 1.28, mae: 1.36 },
+  ];
+  return {
+    date: today,
+    ground,
+    satellite,
+    today: stats(pairSeries(ground, satellite)),
+    groundPeak: groundDailyPeak(ground, today),
+    satellitePeak: sat.length ? Math.max(...sat.map((s) => s.uvi)) : null,
+    scoreboard: rows.map((r) => ({ ...r, n: 45 })).sort((a, b) => a.mae - b.mae),
+    scoreDays: 45,
+    status: { ground: "ok", satellite: "ok" },
   };
 }

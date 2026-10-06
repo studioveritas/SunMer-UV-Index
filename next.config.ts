@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // h5wasm ships a WebAssembly build; keep it out of the bundler.
   serverExternalPackages: ["h5wasm", "web-push"],
+  // Share-card fonts are read from disk at runtime; make sure they ship.
+  outputFileTracingIncludes: { "/api/card/[city]": ["./assets/fonts/**"] },
   async headers() {
     return [
       {

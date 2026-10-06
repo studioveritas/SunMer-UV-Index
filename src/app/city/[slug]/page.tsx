@@ -5,7 +5,14 @@ import { getCityUv } from "@/lib/service";
 import { getProvider } from "@/lib/providers";
 import { whoBand } from "@/lib/who";
 import { DESCRIPTOR, displayDate, displayTime } from "@/lib/palette";
-import { Category, Gauge, PaletteDots, Sky, SunGlyph } from "../../ui";
+import type { Metadata } from "next";
+import { Category, Gauge, MoonGlyph, PaletteDots, Sky, SunGlyph } from "../../ui";
+import { DoseLog } from "../../components/DoseLog";
+import { BestHoursBand } from "../../components/BestHoursBand";
+import { ShareButton } from "../../components/ShareButton";
+import { bestHours } from "@/lib/bestHours";
+import { localDate } from "@/lib/time";
+import { whoCategory } from "@/lib/who";
 import { BurnPanel } from "../../components/BurnPanel";
 import { AlertToggle } from "../../components/AlertToggle";
 import { Curve } from "../../components/Curve";
@@ -15,6 +22,18 @@ export const revalidate = 900;
 
 export function generateStaticParams() {
   return CITIES.map((c) => ({ slug: c.slug }));
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const city = getCity(slug);
+  if (!city) return {};
+  const image = `/api/card/${slug}?format=og`;
+  return {
+    title: `UV in ${city.name} today`,
+    openGraph: { title: `Today's sky over ${city.name}`, images: [{ url: image, width: 1200, height: 630 }] },
+    twitter: { card: "summary_large_image", images: [image] },
+  };
 }
 
 const STATUS_COPY = {
@@ -32,49 +51,78 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
   const city = getCity(slug);
   if (!city) notFound();
 
-  const { consensus: c, readings, hourlyCurve, outlook, observed, generatedAt } = await getCityUv(city);
-  const band = whoBand(c.category);
+  const { consensus: c, readings, hourlyCurve, uvCurve, outlook, observed, sun, phase, generatedAt } = await getCityUv(city);
+  const night = phase === "night";
+  // After dark the headline looks ahead: tomorrow's peak, tomorrow's best hours.
+  const headline = night ? outlook[0]?.max ?? null : c.todayMax;
+  const headlineCategory = night ? whoCategory(headline) : c.category;
+  const band = whoBand(headlineCategory);
+  const now = new Date();
+  const bandDay = night && Date.parse(sun.sunset ?? "0") < now.getTime() ? new Date(now.getTime() + 12 * 3600_000) : now;
+  const best = bestHours(uvCurve, bandDay, city.lat, city.lon, now);
   const fullSun =
     c.cloudAdjusted.median !== null && c.clearSky.median
       ? Math.min(100, Math.round((c.cloudAdjusted.median / c.clearSky.median) * 100))
       : null;
 
   return (
-    <>
-      <Sky uvi={c.todayMax} readings={readings}>
+    <div className="page" data-phase={phase}>
+      <Sky uvi={headline} readings={readings} phase={phase}>
         <Link href="/" className="label back">All cities</Link>
       </Sky>
 
       <main className="panel">
         <div className="head">
           <div>
-            <h1 className="label">{city.name}: today's peak UV <PaletteDots /></h1>
-            <p className="sublabel">{c.category ? DESCRIPTOR[c.category] : "Waiting for sources"}</p>
+            <h1 className="label">{city.name}: {night ? "tomorrow's" : "today's"} peak UV <PaletteDots /></h1>
+            <p className="sublabel">
+              {night ? `After sunset. Showing tomorrow` : headlineCategory ? DESCRIPTOR[headlineCategory] : "Waiting for sources"}
+            </p>
           </div>
           <p className="label">{displayDate(new Date(), city.tz)}</p>
         </div>
 
         <div className="reading">
-          <p className="big">{c.todayMax ?? "–"}<small>uvi</small></p>
-          <SunGlyph uvi={c.todayMax} />
+          <p className="big">{headline ?? "–"}<small>uvi</small></p>
+          {night ? <MoonGlyph /> : <SunGlyph uvi={headline} />}
         </div>
 
         <div className="pair">
           <div>
             <p className="label">Level</p>
-            <p className="value"><Category category={c.category} /></p>
+            <p className="value"><Category category={headlineCategory} /></p>
             {band && <p className="note">{band.advice}</p>}
           </div>
           <div>
-            <p className="label">Right now</p>
-            <p className="value">{c.current ?? "–"}</p>
-            <p className="note">
-              {c.currentSource === "observed" ? "Measured by KNMI satellite, last 15 min" : c.currentSource === "forecast" ? "Forecast for this hour" : "No hourly source"}
-            </p>
+            {night ? (
+              <>
+                <p className="label">Sunset</p>
+                <p className="value">{sun.sunset ? displayTime(sun.sunset, city.tz) : "–"}</p>
+                <p className="note">Today peaked at {c.todayMax ?? "–"}.</p>
+              </>
+            ) : (
+              <>
+                <p className="label">Right now</p>
+                <p className="value">{c.current ?? "–"}</p>
+                <p className="note">
+                  {c.currentSource === "observed" ? "Measured by KNMI satellite, last 15 min" : c.currentSource === "forecast" ? "Forecast for this hour" : "No hourly source"}
+                </p>
+              </>
+            )}
           </div>
         </div>
 
-        <BurnPanel curve={hourlyCurve} tz={city.tz} />
+        {!night && <BurnPanel curve={uvCurve} tz={city.tz} />}
+
+        <section className="block">
+          <p className="label">{night ? "Best hours for a run tomorrow" : "Best hours for a run"}</p>
+          <BestHoursBand best={best} tz={city.tz} />
+        </section>
+
+        <section className="block">
+          <p className="label">Your dose today</p>
+          <DoseLog curve={uvCurve} tz={city.tz} date={localDate(now, city.tz)} />
+        </section>
 
         <section className="block pair" aria-label="Conditions">
           <Gauge label="Cloud-free sky" value={c.clearSky.median} display={c.clearSky.median ?? "–"} />
@@ -117,6 +165,11 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
         </section>
 
         <section className="block">
+          <p className="label">Share</p>
+          <ShareButton slug={city.slug} cityName={city.name} />
+        </section>
+
+        <section className="block">
           <p className="label">Alerts</p>
           <AlertToggle city={city.slug} cityName={city.name} />
         </section>
@@ -144,9 +197,9 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
               </tbody>
             </table>
           </div>
-          <p className="note">Updated {displayTime(generatedAt, city.tz)}.</p>
+          <p className="note">Updated {displayTime(generatedAt, city.tz)}. <Link href="/ground-truth">How accurate is this?</Link></p>
         </section>
       </main>
-    </>
+    </div>
   );
 }

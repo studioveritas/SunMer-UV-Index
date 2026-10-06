@@ -4,6 +4,7 @@ import path from "node:path";
 import { unstable_cache } from "next/cache";
 import type { City, ObservedLayer } from "../types";
 import { CITIES } from "../config/cities";
+import { RIVM_STATION } from "./rivm";
 import { localDate, round1 } from "../time";
 
 /**
@@ -145,7 +146,7 @@ async function downloadAndExtract(): Promise<{ fileTime: string; byCity: ReturnT
     await h5wasm.ready;
     const f = new h5wasm.File(tmp, "r");
     try {
-      return { fileTime: file.created ?? file.lastModified ?? file.filename, byCity: extractCities(f, CITIES.filter(inBenelux)) };
+      return { fileTime: file.created ?? file.lastModified ?? file.filename, byCity: extractCities(f, [...CITIES.filter(inBenelux), { slug: "bilthoven", name: "Bilthoven", country: "NL", lat: RIVM_STATION.lat, lon: RIVM_STATION.lon, tz: "Europe/Amsterdam" }]) };
     } finally {
       f.close();
     }

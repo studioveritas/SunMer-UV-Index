@@ -1,7 +1,8 @@
 import type { CSSProperties } from "react";
 import type { UvReading, WhoCategory } from "@/lib/types";
-import { orbColors } from "@/lib/palette";
+import { orbColors, phaseSky } from "@/lib/palette";
 import { whoBand } from "@/lib/who";
+import { sunGlyph } from "@/lib/glyph";
 import { CORE_PROVIDERS, getProvider } from "@/lib/providers";
 
 export function orbStyle(uvi: number | null): CSSProperties {
@@ -10,9 +11,12 @@ export function orbStyle(uvi: number | null): CSSProperties {
 }
 
 /** Hero sky. The three dots are the three core national services: filled = reporting. */
-export function Sky({ uvi, readings, children }: { uvi: number | null; readings?: Pick<UvReading, "provider" | "status">[]; children?: React.ReactNode }) {
+export function Sky({ uvi, readings, phase = "day", children }: { uvi: number | null; readings?: Pick<UvReading, "provider" | "status">[]; phase?: "day" | "dusk" | "night"; children?: React.ReactNode }) {
+  const p = phaseSky(phase, uvi);
+  const style = { ["--core" as string]: p.core, ["--mid" as string]: p.mid, ["--outer" as string]: p.outer, ["--s" as string]: p.scale, ["--sky-now" as string]: p.sky };
   return (
-    <header className="sky" style={orbStyle(uvi)}>
+    <header className="sky" style={style}>
+      {phase === "night" && <span className="stars" aria-hidden />}
       {readings && (
         <ul className="status" aria-label="Core sources reporting">
           {CORE_PROVIDERS.map((id) => {
@@ -38,25 +42,12 @@ export function PaletteDots() {
 
 /** Half sun. Rays multiply with the UV index (8 rays at 0, 32 at 12+). */
 export function SunGlyph({ uvi }: { uvi: number | null }) {
-  const u = Math.max(0, Math.min(12, uvi ?? 0));
-  const rays = 8 + Math.round(u * 2);
-  const reach = 0.62 + (u / 12) * 0.38;
-  const cx = 160, cy = 110, r = 34;
-  const lines = Array.from({ length: rays + 1 }, (_, i) => {
-    const a = Math.PI + (i * Math.PI) / rays;
-    const len = (i % 2 ? 0.78 : 1) * 118 * reach;
-    const w = 4.2;
-    const tip = [cx + Math.cos(a) * len, cy + Math.sin(a) * len];
-    const b1 = [cx + Math.cos(a + Math.PI / 2) * w, cy + Math.sin(a + Math.PI / 2) * w];
-    const b2 = [cx + Math.cos(a - Math.PI / 2) * w, cy + Math.sin(a - Math.PI / 2) * w];
-    return `M${b1[0].toFixed(1)} ${b1[1].toFixed(1)} L${tip[0].toFixed(1)} ${tip[1].toFixed(1)} L${b2[0].toFixed(1)} ${b2[1].toFixed(1)} Z`;
-  });
+  const g = sunGlyph(uvi);
   return (
-    <svg className="glyph" viewBox="20 0 280 114" role="img" aria-label={`Sun, ${rays} rays`}>
+    <svg className="glyph" viewBox={g.viewBox} role="img" aria-label={`Sun, ${g.rays} rays`}>
       <g fill="currentColor">
-        {lines.map((d, i) => <path key={i} d={d} />)}
-        <path d={`M${cx - r} ${cy} A${r} ${r} 0 0 1 ${cx + r} ${cy} Z`} />
-        <rect x="24" y={cy - 1} width="272" height="2.5" />
+        {g.paths.map((d, i) => <path key={i} d={d} />)}
+        <rect x={g.horizon.x} y={g.horizon.y} width={g.horizon.w} height={g.horizon.h} />
       </g>
     </svg>
   );
@@ -83,5 +74,15 @@ export function Category({ category }: { category: WhoCategory | null }) {
       <span className="who" style={{ background: `var(--who-${band.category})` }} aria-hidden />
       {band.label}
     </>
+  );
+}
+
+/** Crescent moon for night mode, same footprint as the sun glyph. */
+export function MoonGlyph() {
+  return (
+    <svg className="glyph" viewBox="20 0 280 114" role="img" aria-label="Moon">
+      <path fill="currentColor" d="M170 14a48 48 0 1 0 38 78 40 40 0 1 1-38-78z" />
+      <rect x="24" y="109" width="272" height="2.5" fill="currentColor" />
+    </svg>
   );
 }

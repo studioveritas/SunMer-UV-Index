@@ -8,6 +8,7 @@ import { knmiObservedMeta } from "@/lib/providers/knmiObserved";
 import { demoMode } from "@/lib/demo";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
   title: "UV Europe",
   description: "Today's UV across European cities, cross-checked across national weather services.",
   manifest: "/manifest.webmanifest",
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <footer>
-          <p>{[...PROVIDERS.map((p) => p.meta.attribution), knmiObservedMeta.attribution].join(". ")}.</p>
+          <p>{[...PROVIDERS.map((p) => p.meta.attribution), knmiObservedMeta.attribution, "Ground measurements: RIVM/opendata"].join(". ")}.</p>
           {demoMode && <p>Demo data. Synthetic values for design review, not real UV.</p>}
           <p>UV levels follow the WHO Global Solar UV Index. Forecasts and estimates, not medical advice.</p>
         </footer>

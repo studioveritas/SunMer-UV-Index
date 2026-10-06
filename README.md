@@ -1,4 +1,4 @@
-# UV Europe (v0.2)
+# UV Europe (v0.3)
 
 A Next.js 16 web app that reports today's UV index for 20 European cities,
 cross-checked across national meteorological services.
@@ -85,6 +85,44 @@ is available.
 | Copernicus CAMS via Open-Meteo | Cloud-adjusted, hourly | Only for commercial use | 60 min | Attribution to CAMS + Open-Meteo required |
 | DWD UV-Gefahrenindex | Cloud-adjusted daily max | No | 3 h | Station-based; matched by German name |
 | Météo-France UV API | Cloud-adjusted daily max | Yes | 3 h | **Off until endpoint is confirmed** — see `meteoFrance.ts` |
+
+## New in v0.3
+
+**Night mode.** The page follows the sun, not the system theme. Sun
+position is computed locally (`src/lib/sun.ts`, NOAA sunrise equation, ~1
+min accuracy). Above 6°: day. From 6° to −6° (golden hour and civil
+twilight): dusk sky. Below −6°: night, with an indigo palette, stars, a
+crescent glyph, and the headline switches to tomorrow's peak and
+tomorrow's best hours. Preview any phase with `UV_PHASE=day|dusk|night`.
+
+**Share cards.** `/api/card/:city?format=story|square|og` renders today's
+sky as a PNG (1080×1920, 1080×1080, 1200×630) with self-hosted fonts.
+"Share today's sky" opens the native share sheet on phones (Web Share API
+with files) and downloads elsewhere. City pages use the `og` card as their
+link preview, so every shared link shows that day's sky.
+
+**Your dose today.** Log time outside with a live timer or quick adds.
+Dose is integrated minute by minute over each session (KNMI measurements
+where available, forecast elsewhere) and shown as % of your burn dose and
+in SED (standard erythema doses, 100 J/m²). Uses the skin type and
+sunscreen set in the burn panel. Stored in the browser only, per day.
+
+**Best hours for a run.** Sunrise to sunset as one band: UV below 3
+(no protection needed for most people), 3–5, and 6+. The headline is the
+longest low-UV window still ahead today. Classified on the rounded UV, as
+the WHO reports it.
+
+**Ground truth** (`/ground-truth`). KNMI satellite UV against RIVM's
+ground spectroradiometer at Bilthoven, the only ground UV station in the
+Netherlands: today's chart, typical gap, bias, correlation. Plus a
+forecast scoreboard: the morning cron records every service's forecast
+for Bilthoven, and each is scored against the peak RIVM measured.
+Data: `/api/validation` (JSON) and `?format=csv`.
+
+For the publishable story, `npm run backfill-validation -- 2026-04-01 2026-09-30`
+builds `data/validation/pairs.csv` and `summary.json` (overall, by month,
+by UV level). It assumes KNMI file names contain YYYYMMDD; check the first
+listing it prints.
 
 ## GDPR notes
 

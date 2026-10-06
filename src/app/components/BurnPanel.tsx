@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { HourlyValue } from "@/lib/types";
-import { SKIN_TYPES, burnMinutes, effectiveSpf, peakStart, type SkinTypeId } from "@/lib/burn";
+import { SKIN_TYPES, burnMinutes, effectiveSpf, peakStart, type UvCurve } from "@/lib/burn";
+import { useSkin } from "@/lib/client/useSkin";
 
 const SPFS = [1, 15, 30, 50] as const;
-const KEY = "uv:skin";
 
 function fmt(min: number | null) {
   if (min === null) return { n: "No", unit: "burn likely" };
@@ -13,18 +12,13 @@ function fmt(min: number | null) {
   return { n: String(min), unit: "min" };
 }
 
-export function BurnPanel({ curve, tz }: { curve: HourlyValue[]; tz: string }) {
-  const [skin, setSkin] = useState<SkinTypeId>(2);
-  const [spf, setSpf] = useState<number>(1);
-  const [application, setApplication] = useState<"label" | "real-life">("real-life");
+export function BurnPanel({ curve, tz }: { curve: UvCurve; tz: string }) {
+  const [{ skin, spf, application }, update] = useSkin();
+  const setSkin = (v: typeof skin) => update({ skin: v });
+  const setSpf = (v: number) => update({ spf: v });
+  const setApplication = (v: "label" | "real-life") => update({ application: v });
   const [now, setNow] = useState<Date | null>(null);
-
-  useEffect(() => {
-    setNow(new Date());
-    const saved = Number(localStorage.getItem(KEY));
-    if (saved >= 1 && saved <= 6) setSkin(saved as SkinTypeId);
-  }, []);
-  useEffect(() => { try { localStorage.setItem(KEY, String(skin)); } catch {} }, [skin]);
+  useEffect(() => setNow(new Date()), []);
 
   const result = useMemo(() => {
     if (!now) return null;

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runAlerts } from "@/lib/alerts";
+import { recordForecasts } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -14,5 +15,8 @@ export async function GET(req: Request) {
   if (!secret || req.headers.get("authorization") !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorised" }, { status: 401 });
   }
-  return NextResponse.json(await runAlerts());
+  // The morning run also records each service's forecast for Bilthoven,
+  // so the ground-truth scoreboard can score it against RIVM tomorrow.
+  const recorded = await recordForecasts().catch((e) => `error: ${e instanceof Error ? e.message : e}`);
+  return NextResponse.json({ ...(await runAlerts()), forecastsRecorded: recorded });
 }

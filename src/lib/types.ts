@@ -121,5 +121,9 @@ export interface CityUv {
   /** Days after today, up to 6. */
   outlook: OutlookDay[];
   observed: ObservedLayer;
+  /** Instant-based curve: KNMI measurements where available, then forecast. Drives burn, dose and best hours. */
+  uvCurve: { time: string; uvi: number }[];
+  sun: { sunrise: string | null; sunset: string | null; dusk: string | null };
+  phase: "day" | "dusk" | "night";
   generatedAt: string;
 }

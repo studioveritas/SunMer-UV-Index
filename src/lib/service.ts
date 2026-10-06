@@ -6,6 +6,8 @@ import { buildConsensus, buildHourlyCurve, buildOutlook } from "./consensus";
 import { CITIES } from "./config/cities";
 import { localDate } from "./time";
 import { demoCityUv, demoMode } from "./demo";
+import { fromHourly, mergeObserved } from "./burn";
+import { skyPhase, sunTimes } from "./sun";
 
 /** Small concurrency limiter so a cold cache doesn't burst upstream services. */
 async function pool<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): Promise<R[]> {
@@ -42,11 +44,14 @@ export async function getCityUv(city: City): Promise<CityUv> {
     consensus.currentSource = "observed";
   }
 
+  const hourlyCurve = buildHourlyCurve(readings);
   return {
     city,
     readings,
     consensus,
-    hourlyCurve: buildHourlyCurve(readings),
+    hourlyCurve,
+    uvCurve: mergeObserved(fromHourly(hourlyCurve), observed.series),
+    ...sunInfo(city),
     outlook: buildOutlook(readings, localDate(new Date(), city.tz)),
     observed,
     generatedAt: new Date().toISOString(),
@@ -55,4 +60,13 @@ export async function getCityUv(city: City): Promise<CityUv> {
 
 export async function getAllCitiesUv(): Promise<CityUv[]> {
   return pool(CITIES, 4, getCityUv);
+}
+
+export function sunInfo(city: City) {
+  const now = new Date();
+  const t = sunTimes(now, city.lat, city.lon);
+  return {
+    sun: { sunrise: t.sunrise?.toISOString() ?? null, sunset: t.sunset?.toISOString() ?? null, dusk: t.dusk?.toISOString() ?? null },
+    phase: skyPhase(now, city.lat, city.lon),
+  };
 }

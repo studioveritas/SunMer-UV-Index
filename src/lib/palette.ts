@@ -52,3 +52,13 @@ export function displayDate(d: Date, tz: string): string {
 export function displayTime(iso: string, tz: string): string {
   return new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
 }
+
+/**
+ * After sunset the sky turns: dusk keeps a low ember on a rose-lavender sky,
+ * night drops to indigo with a faint violet glow where the sun went down.
+ */
+export function phaseSky(phase: "day" | "dusk" | "night", uvi: number | null) {
+  if (phase === "dusk") return { sky: "#9EA2D4", core: "rgb(231 140 92)", mid: "rgb(200 110 140)", outer: "rgb(128 122 186)", scale: "0.85" };
+  if (phase === "night") return { sky: "#16182E", core: "rgb(92 88 150)", mid: "rgb(58 58 112)", outer: "rgb(36 38 76)", scale: "0.8" };
+  return { sky: "var(--sky-day)", ...orbColors(uvi) };
+}
