@@ -1,0 +1,14 @@
+{
+  "name": "UV Europe",
+  "short_name": "UV",
+  "description": "Today's UV across European cities, cross-checked across national weather services.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F0F0F0",
+  "theme_color": "#C4CFEA",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

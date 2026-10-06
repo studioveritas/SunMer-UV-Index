@@ -82,14 +82,44 @@ export interface Consensus {
   /** How much cloud is expected to take off the peak (clear-sky minus cloud-adjusted). */
   cloudEffect: number | null;
   current: number | null;
+  /** "observed" when KNMI satellite data is fresher than the forecast. */
+  currentSource: "observed" | "forecast" | null;
   category: WhoCategory | null;
   confidence: Confidence;
   sourcesOk: number;
+}
+
+export interface OutlookDay {
+  date: string;
+  /** Headline for the day: cloud-adjusted median if any source reaches that far, else clear-sky. */
+  max: number | null;
+  kind: UvKind | null;
+  category: WhoCategory | null;
+  cloudAdjusted: number | null;
+  clearSky: number | null;
+  sources: number;
+}
+
+/** KNMI satellite-derived UV, every 15 min, Benelux only. Measured, not forecast. */
+export interface ObservedLayer {
+  source: "knmi-benelux";
+  status: "ok" | "error" | "not_configured" | "not_covered";
+  /** Quarter-hourly cloud-modified UV (null where KNMI has no value). */
+  series: { time: string; uvi: number | null; clear: number | null }[];
+  latest: { time: string; uvi: number } | null;
+  peakSoFar: number | null;
+  fileTime: string | null;
+  error?: string;
 }
 
 export interface CityUv {
   city: City;
   consensus: Consensus;
   readings: UvReading[];
+  /** Hour-by-hour cloud-adjusted median across sources (drives burn time). */
+  hourlyCurve: HourlyValue[];
+  /** Days after today, up to 6. */
+  outlook: OutlookDay[];
+  observed: ObservedLayer;
   generatedAt: string;
 }

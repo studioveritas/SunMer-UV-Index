@@ -39,7 +39,7 @@ export const cams: Provider = {
       const host = key ? "customer-air-quality-api.open-meteo.com" : "air-quality-api.open-meteo.com";
       const url =
         `https://${host}/v1/air-quality?latitude=${city.lat}&longitude=${city.lon}` +
-        `&hourly=uv_index&timezone=GMT&forecast_days=4` +
+        `&hourly=uv_index&timezone=GMT&forecast_days=5` +
         (key ? `&apikey=${key}` : "");
       const res = await cachedFetch(url, meta.revalidateMinutes);
       const hourly = parseOpenMeteo(await res.json());

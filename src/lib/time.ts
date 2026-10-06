@@ -15,11 +15,16 @@ export function dailyMaxFromHourly(
   tz: string,
 ): { date: string; max: number }[] {
   const byDay = new Map<string, number>();
+  const hasMidday = new Set<string>();
   for (const h of hourly) {
-    const d = localDate(new Date(h.time), tz);
+    const at = new Date(h.time);
+    const d = localDate(at, tz);
     byDay.set(d, Math.max(byDay.get(d) ?? 0, h.uvi));
+    if (localHour(at, tz) >= 11 && localHour(at, tz) <= 14) hasMidday.add(d);
   }
+  // A day whose series stops before midday would report a false low peak; drop it.
   return [...byDay.entries()]
+    .filter(([d]) => hasMidday.has(d))
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, max]) => ({ date, max: round1(max) }));
 }
@@ -40,4 +45,8 @@ export function currentFromHourly(
 
 export function round1(n: number): number {
   return Math.round(n * 10) / 10;
+}
+
+export function localHour(instant: Date, tz: string): number {
+  return Number(new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "numeric", hour12: false }).format(instant)) % 24;
 }

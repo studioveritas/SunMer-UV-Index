@@ -1,4 +1,4 @@
-import type { Confidence, Consensus, UvKind, UvReading } from "./types";
+import type { Confidence, Consensus, HourlyValue, OutlookDay, UvKind, UvReading } from "./types";
 import { whoCategory } from "./who";
 import { round1 } from "./time";
 
@@ -59,8 +59,57 @@ export function buildConsensus(readings: UvReading[]): Consensus {
     clearSky,
     cloudEffect,
     current: median(currents),
+    currentSource: currents.length ? "forecast" : null,
     category: whoCategory(headline.median),
     confidence: confidenceFor(sourcesOk, headline.spread),
     sourcesOk,
   };
+}
+
+/* ------------------------------------------------------------------ */
+/* Outlook: one consensus per future day, with honest fallback.        */
+/* Cloud-adjusted sources stop after 2–5 days; beyond that the outlook */
+/* shows the clear-sky potential and says so.                          */
+/* ------------------------------------------------------------------ */
+
+
+export function buildOutlook(readings: UvReading[], today: string, days = 6): OutlookDay[] {
+  const ok = readings.filter((r) => r.status === "ok");
+  const dates = new Set<string>();
+  for (const r of ok) for (const d of r.daily) if (d.date > today) dates.add(d.date);
+
+  return [...dates].sort().slice(0, days).map((date) => {
+    const pick = (kind: UvKind) =>
+      ok.filter((r) => r.kind === kind)
+        .map((r) => r.daily.find((d) => d.date === date)?.max)
+        .filter((v): v is number => typeof v === "number");
+    const cloudy = pick("cloud-adjusted");
+    const clear = pick("clear-sky");
+    const kind: UvKind | null = cloudy.length ? "cloud-adjusted" : clear.length ? "clear-sky" : null;
+    const max = kind === "cloud-adjusted" ? median(cloudy) : median(clear);
+    return {
+      date,
+      max,
+      kind,
+      category: whoCategory(max),
+      cloudAdjusted: median(cloudy),
+      clearSky: median(clear),
+      sources: cloudy.length + clear.length,
+    };
+  });
+}
+
+/** Hour-by-hour median of hourly cloud-adjusted sources (Met Office, CAMS). */
+export function buildHourlyCurve(readings: UvReading[]): HourlyValue[] {
+  const byHour = new Map<string, number[]>();
+  for (const r of readings) {
+    if (r.status !== "ok" || r.kind !== "cloud-adjusted" || r.resolution !== "hourly") continue;
+    for (const h of r.hourly) {
+      const key = new Date(Math.floor(Date.parse(h.time) / 3600_000) * 3600_000).toISOString();
+      byHour.set(key, [...(byHour.get(key) ?? []), h.uvi]);
+    }
+  }
+  return [...byHour.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([time, vals]) => ({ time, uvi: median(vals) as number }));
 }

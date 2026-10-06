@@ -1,8 +1,11 @@
 import type { City, CityUv, UvReading } from "./types";
 import { PROVIDERS } from "./providers";
 import { emptyReading } from "./providers/base";
-import { buildConsensus } from "./consensus";
+import { getObserved } from "./providers/knmiObserved";
+import { buildConsensus, buildHourlyCurve, buildOutlook } from "./consensus";
 import { CITIES } from "./config/cities";
+import { localDate } from "./time";
+import { demoCityUv, demoMode } from "./demo";
 
 /** Small concurrency limiter so a cold cache doesn't burst upstream services. */
 async function pool<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): Promise<R[]> {
@@ -19,17 +22,33 @@ async function pool<T, R>(items: T[], limit: number, fn: (t: T) => Promise<R>): 
 }
 
 export async function getCityUv(city: City): Promise<CityUv> {
-  const readings: UvReading[] = await Promise.all(
-    PROVIDERS.map((p) => {
-      if (!p.covers(city)) return Promise.resolve(emptyReading(p.meta, "not_covered"));
-      if (!p.isConfigured()) return Promise.resolve(emptyReading(p.meta, "not_configured"));
-      return p.fetchCity(city); // adapters never throw; failures become status "error"
-    }),
-  );
+  if (demoMode) return demoCityUv(city);
+  const [readings, observed] = await Promise.all([
+    Promise.all(
+      PROVIDERS.map((p): Promise<UvReading> => {
+        if (!p.covers(city)) return Promise.resolve(emptyReading(p.meta, "not_covered"));
+        if (!p.isConfigured()) return Promise.resolve(emptyReading(p.meta, "not_configured"));
+        return p.fetchCity(city); // adapters never throw; failures become status "error"
+      }),
+    ),
+    getObserved(city),
+  ]);
+
+  const consensus = buildConsensus(readings);
+
+  // Measured beats modelled: if KNMI observed UV in the last 30 minutes, it is "right now".
+  if (observed.latest && Date.now() - Date.parse(observed.latest.time) < 30 * 60_000) {
+    consensus.current = observed.latest.uvi;
+    consensus.currentSource = "observed";
+  }
+
   return {
     city,
     readings,
-    consensus: buildConsensus(readings),
+    consensus,
+    hourlyCurve: buildHourlyCurve(readings),
+    outlook: buildOutlook(readings, localDate(new Date(), city.tz)),
+    observed,
     generatedAt: new Date().toISOString(),
   };
 }
