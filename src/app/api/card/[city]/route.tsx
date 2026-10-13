@@ -42,7 +42,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ city: string }>
   const params = new URL(req.url).searchParams;
   const format = (params.get("format") ?? "story") as keyof typeof FORMATS;
   const { width, height } = FORMATS[format] ?? FORMATS.story;
-  const look = params.get("look") === "vibrant" ? "vibrant" : "classic";
+  const look = params.get("look") === "classic" ? "classic" : "vibrant";
   const download = params.get("download") === "1";
   const kind = params.get("kind") === "week" ? "week" : "day";
 

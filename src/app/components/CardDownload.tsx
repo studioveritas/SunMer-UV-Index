@@ -15,7 +15,7 @@ export function CardDownload({ slug, cityName, compact = false, kind = "day" }: 
   const [look, setLook] = useState("vibrant");
   const [busy, setBusy] = useState<Format | null>(null);
   const [msg, setMsg] = useState("");
-  useEffect(() => setLook(document.documentElement.dataset.look ?? "vibrant"), []);
+  useEffect(() => setLook("vibrant"), []);
 
   const url = (f: Format, dl = false) => `/api/card/${slug}?format=${f}&look=${look}${kind === "week" ? "&kind=week" : ""}${dl ? "&download=1" : ""}`;
 

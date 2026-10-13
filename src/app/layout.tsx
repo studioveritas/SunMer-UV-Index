@@ -7,7 +7,6 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "./globals.css";
 import "./vibrant.css";
-import { LookSwitch } from "./components/LookSwitch";
 import { PROVIDERS } from "@/lib/providers";
 import { knmiObservedMeta } from "@/lib/providers/knmiObserved";
 import { demoMode } from "@/lib/demo";
@@ -21,24 +20,14 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "UV Europe", statusBarStyle: "default" },
 };
 
-export const viewport: Viewport = { themeColor: "#C4CFEA", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#FCF6F8", width: "device-width", initialScale: 1 };
 
-/**
- * Design trial. Order of precedence, decided before first paint (no flash):
- *   1. ?look=classic|vibrant in the URL (share a link to force a look)
- *   2. the look this browser was already given (kept, so a tester stays in one arm)
- *   3. NEXT_PUBLIC_LOOK: "classic" | "vibrant" | "split" (random 50/50, then kept)
- * The chosen look is on <html data-look> and window.uvLook for analytics.
- */
-const DEFAULT_LOOK = process.env.NEXT_PUBLIC_LOOK ?? "split";
-const lookScript = `(function(){try{var d=${JSON.stringify(DEFAULT_LOOK)},k="uv:look",ok=["classic","vibrant"];
-var q=new URLSearchParams(location.search).get("look");var s=null;try{s=localStorage.getItem(k)}catch(e){}
-var l=ok.indexOf(q)>-1?q:ok.indexOf(s)>-1?s:d==="split"?(Math.random()<.5?"classic":"vibrant"):(ok.indexOf(d)>-1?d:"classic");
-try{localStorage.setItem(k,l)}catch(e){}document.documentElement.dataset.look=l;window.uvLook=l;}catch(e){}})();`;
+/** Vibrant is the only look. Clears any classic choice remembered from the A/B trial. */
+const lookScript = `(function(){try{localStorage.removeItem("uv:look")}catch(e){}document.documentElement.dataset.look="vibrant";window.uvLook="vibrant";})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-look="classic" suppressHydrationWarning>
+    <html lang="en" data-look="vibrant" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: lookScript }} />
       </head>
@@ -51,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <footer>
           <p>{[...PROVIDERS.map((p) => p.meta.attribution), knmiObservedMeta.attribution, "Ground measurements: RIVM/opendata"].join(". ")}.</p>
           {demoMode && <p>Demo data. Synthetic values for design review, not real UV.</p>}
-          <p>UV levels follow the WHO Global Solar UV Index. Forecasts and estimates, not medical advice. <LookSwitch /></p>
+          <p>UV levels follow the WHO Global Solar UV Index. Forecasts and estimates, not medical advice.</p>
         </footer>
       </body>
     </html>

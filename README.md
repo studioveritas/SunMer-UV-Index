@@ -124,19 +124,11 @@ off for people who prefer reduced motion.
 
 ## v0.4: "Vibrant" design trial + Instagram downloads
 
-**Two looks, same content.** `classic` (the sunset reference) and
-`vibrant` (bright blurred colour fields on white, IBM Plex Mono throughout,
-oversized numerals bleeding off the edge, hairline rows, black
-circle-arrow actions). Vibrant is a stylesheet over the same markup
-(`src/app/vibrant.css`), so nothing in the content differs between arms.
-
-How a visitor gets a look, decided before first paint:
-1. `?look=classic` or `?look=vibrant` in the URL;
-2. the look this browser was already given (testers stay in one arm);
-3. `NEXT_PUBLIC_LOOK` = `classic` | `vibrant` | `split` (default `split`:
-   random 50/50, then kept).
-The look is on `<html data-look>` and `window.uvLook` — pass it to your
-analytics as a property to compare arms. A switch in the footer lets you flip.
+**Vibrant is the live look** (since v0.6; the classic arm of the trial was
+retired). Bright blurred colour fields on white, IBM Plex Mono throughout,
+oversized numerals, hairline rows, black circle-arrow actions. The classic
+stylesheet remains in `globals.css` as the base layer that `vibrant.css`
+overrides, and `?look=classic` on the card API still renders a classic PNG.
 
 The vibrant colours still carry the reading: violet/lemon when low,
 gold/orange at moderate, orange/red when high, red/magenta very high,

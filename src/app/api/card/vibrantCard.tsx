@@ -53,6 +53,40 @@ export function VibrantCard({ uv, width, height, host }: { uv: CityUv; width: nu
     ["Sunset", uv.sun.sunset ? time(uv.sun.sunset, city.tz) : "–"],
   ];
 
+  // Landscape (link previews, 1200×630): headline left, number right, no overlap.
+  if (width / height > 1.4) {
+    const h = height / 630;
+    const wideNum = (num.length > 2 ? 250 : num.length === 2 ? 330 : 400) * h;
+    return (
+      <div style={{ width: "100%", height: "100%", display: "flex", position: "relative", backgroundColor: paper, backgroundImage: field, padding: `${52 * h}px ${60 * h}px`, overflow: "hidden" }}>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", width: "58%", height: "100%" }}>
+          <div style={{ ...small, fontSize: 22 * h }}>{night ? "Tomorrow's UV" : "Today's UV"}</div>
+          <div style={{ display: "flex", flexDirection: "column", fontFamily: "Plex Mono", fontSize: 64 * h, lineHeight: 1, letterSpacing: -3 * h, color: ink, textTransform: "uppercase" }}>
+            <div style={{ display: "flex", alignItems: "flex-start" }}>
+              {stamp(day, city.tz)}
+              <span style={{ fontFamily: "Plex Mono Medium", fontSize: 18 * h, letterSpacing: 0, marginLeft: 16 * h, marginTop: 10 * h }}>({city.country})</span>
+            </div>
+            <div style={{ display: "flex" }}>{city.name}</div>
+            <div style={{ display: "flex" }}>Peak UV index</div>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ ...rule, height: 2 * h, marginBottom: 14 * h }} />
+            {facts.slice(0, 2).map(([k, val]) => (
+              <div key={k} style={{ display: "flex", justifyContent: "space-between", fontFamily: "Plex Mono Medium", fontSize: 20 * h, color: ink, textTransform: "uppercase", marginBottom: 6 * h }}>
+                <span>{k}</span><span>{val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "flex-end", width: "42%", height: "100%" }}>
+          <div style={{ ...small, fontSize: 22 * h }}>{band ? band.label : ""}</div>
+          <div style={{ display: "flex", fontFamily: "Plex Mono Light", fontSize: wideNum, lineHeight: 0.8, letterSpacing: -wideNum * 0.08, color: ink }}>{num}</div>
+          <div style={{ ...small, fontSize: 18 * h }}>{host}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", position: "relative", backgroundColor: paper, backgroundImage: field, padding: `${(tall ? 170 : 66) * u}px ${64 * u}px`, overflow: "hidden" }}>
       {/* top bar */}
