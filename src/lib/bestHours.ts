@@ -26,7 +26,8 @@ export interface BestHours {
 // UV is reported as a whole number (WHO), so classify on the rounded value: 2.6 counts as 3,
 // matching the level label shown in the headline.
 const levelOf = (uvi: number): BandLevel => {
-  const r = Math.round(uvi);
+  // Round to one decimal first, as displayed, so a shown 2.5 counts as 3 like the level label.
+  const r = Math.round(Math.round(uvi * 10) / 10);
   return r < LOW_UV ? "low" : r < 6 ? "moderate" : "high";
 };
 

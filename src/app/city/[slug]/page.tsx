@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import { Category, Gauge, MoonGlyph, PaletteDots, Sky, SunGlyph } from "../../ui";
 import { DoseLog } from "../../components/DoseLog";
 import { BestHoursBand } from "../../components/BestHoursBand";
-import { ShareButton } from "../../components/ShareButton";
+import { CardDownload } from "../../components/CardDownload";
 import { bestHours } from "@/lib/bestHours";
 import { localDate } from "@/lib/time";
 import { whoCategory } from "@/lib/who";
@@ -17,6 +17,10 @@ import { BurnPanel } from "../../components/BurnPanel";
 import { AlertToggle } from "../../components/AlertToggle";
 import { Curve } from "../../components/Curve";
 import { Outlook } from "../../components/Outlook";
+import { CityTabs } from "../../components/CityTabs";
+import { WeekAhead } from "../../components/WeekAhead";
+import { buildWeek } from "@/lib/week";
+import { VIBRANT_DESCRIPTOR } from "@/lib/vibrant";
 
 export const revalidate = 900;
 
@@ -51,7 +55,9 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
   const city = getCity(slug);
   if (!city) notFound();
 
-  const { consensus: c, readings, hourlyCurve, uvCurve, outlook, observed, sun, phase, generatedAt } = await getCityUv(city);
+  const uv = await getCityUv(city);
+  const { consensus: c, readings, hourlyCurve, uvCurve, outlook, observed, sun, phase, generatedAt } = uv;
+  const week = buildWeek(uv);
   const night = phase === "night";
   // After dark the headline looks ahead: tomorrow's peak, tomorrow's best hours.
   const headline = night ? outlook[0]?.max ?? null : c.todayMax;
@@ -76,12 +82,20 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
           <div>
             <h1 className="label">{city.name}: {night ? "tomorrow's" : "today's"} peak UV <PaletteDots /></h1>
             <p className="sublabel">
-              {night ? `After sunset. Showing tomorrow` : headlineCategory ? DESCRIPTOR[headlineCategory] : "Waiting for sources"}
+              {night ? "After sunset. Showing tomorrow" : !headlineCategory ? "Waiting for sources" : phase === "dusk" ? (
+                <>Golden hour. <span className="desc-classic">Shades of rose &amp; lavender</span><span className="desc-vibrant">Shades of pink &amp; violet</span></>
+              ) : (
+                <><span className="desc-classic">{DESCRIPTOR[headlineCategory]}</span><span className="desc-vibrant">{VIBRANT_DESCRIPTOR[headlineCategory]}</span></>
+              )}
             </p>
           </div>
           <p className="label">{displayDate(new Date(), city.tz)}</p>
         </div>
 
+        <CityTabs
+          todayLabel={night ? "Tomorrow" : "Today"}
+          week={<WeekAhead uv={uv} week={week} />}
+          today={<>
         <div className="reading">
           <p className="big">{headline ?? "–"}<small>uvi</small></p>
           {night ? <MoonGlyph /> : <SunGlyph uvi={headline} />}
@@ -165,8 +179,9 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
         </section>
 
         <section className="block">
-          <p className="label">Share</p>
-          <ShareButton slug={city.slug} cityName={city.name} />
+          <p className="label">Post today&apos;s UV</p>
+          <CardDownload slug={city.slug} cityName={city.name} />
+          <p className="note"><Link href="/share">All cities</Link></p>
         </section>
 
         <section className="block">
@@ -199,6 +214,8 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
           </div>
           <p className="note">Updated {displayTime(generatedAt, city.tz)}. <Link href="/ground-truth">How accurate is this?</Link></p>
         </section>
+          </>}
+        />
       </main>
     </div>
   );

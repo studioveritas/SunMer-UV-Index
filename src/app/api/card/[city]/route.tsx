@@ -6,13 +6,17 @@ import { getCityUv } from "@/lib/service";
 import { DESCRIPTOR, displayDate, displayTime, phaseSky } from "@/lib/palette";
 import { moonGlyphSvg, sunGlyphSvg } from "@/lib/glyph";
 import { whoCategory } from "@/lib/who";
+import { VibrantCard } from "../vibrantCard";
+import { WeekCard } from "../weekCard";
+import { buildWeek } from "@/lib/week";
 
 export const runtime = "nodejs";
 export const revalidate = 900;
 
 const FORMATS = {
   story: { width: 1080, height: 1920 },  // Instagram / WhatsApp status
-  square: { width: 1080, height: 1080 }, // feed posts
+  post: { width: 1080, height: 1350 },   // Instagram feed post, 4:5 portrait
+  square: { width: 1080, height: 1080 }, // feed posts (square)
   og: { width: 1200, height: 630 },      // link previews
 } as const;
 
@@ -26,7 +30,8 @@ function rgba(c: string, a: number) {
 const svgSrc = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 
 /**
- * GET /api/card/:city?format=story|square|og
+ * GET /api/card/:city?format=story|post|square|og&look=classic|vibrant&kind=day|week&download=1
+ * Public: anyone (admin or visitor) can fetch and post it.
  * Today's sky orb as a shareable image. At night it shows tomorrow's peak
  * under a night sky, matching the page.
  */
@@ -34,10 +39,42 @@ export async function GET(req: Request, ctx: { params: Promise<{ city: string }>
   const { city: slug } = await ctx.params;
   const city = getCity(slug);
   if (!city) return new Response("Unknown city", { status: 404 });
-  const format = (new URL(req.url).searchParams.get("format") ?? "story") as keyof typeof FORMATS;
+  const params = new URL(req.url).searchParams;
+  const format = (params.get("format") ?? "story") as keyof typeof FORMATS;
   const { width, height } = FORMATS[format] ?? FORMATS.story;
+  const look = params.get("look") === "vibrant" ? "vibrant" : "classic";
+  const download = params.get("download") === "1";
+  const kind = params.get("kind") === "week" ? "week" : "day";
 
   const uv = await getCityUv(city);
+  const host = (process.env.NEXT_PUBLIC_SITE_URL ?? "uv-europe").replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: city.tz }).format(new Date());
+  const headers: Record<string, string> = { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=3600" };
+  if (download) headers["Content-Disposition"] = `attachment; filename="uv-${slug}-${date}-${kind === "week" ? "week-" : ""}${format}-${look}.png"`;
+
+  if (kind === "week") {
+    const files = look === "vibrant" ? ["plex-mono-400.woff", "plex-mono-300.woff", "plex-mono-500.woff"] : ["jost-400.woff", "jost-300.woff", "roboto-mono-400.woff"];
+    const [f1, f2, f3] = await Promise.all(files.map(font));
+    const fonts = look === "vibrant"
+      ? [{ name: "Plex Mono", data: f1, weight: 400 as const }, { name: "Plex Mono Light", data: f2, weight: 300 as const }, { name: "Plex Mono Medium", data: f3, weight: 500 as const }]
+      : [{ name: "Jost", data: f1, weight: 400 as const }, { name: "Jost Light", data: f2, weight: 300 as const }, { name: "Roboto Mono", data: f3, weight: 400 as const }];
+    return new ImageResponse(<WeekCard uv={uv} week={buildWeek(uv)} width={width} height={height} host={host} look={look} />, { width, height, fonts, headers });
+  }
+
+  if (look === "vibrant") {
+    const [plex, plexLight, plexMedium] = await Promise.all([font("plex-mono-400.woff"), font("plex-mono-300.woff"), font("plex-mono-500.woff")]);
+    return new ImageResponse(<VibrantCard uv={uv} width={width} height={height} host={host} />, {
+      width,
+      height,
+      fonts: [
+        { name: "Plex Mono", data: plex, weight: 400 },
+        { name: "Plex Mono Light", data: plexLight, weight: 300 },
+        { name: "Plex Mono Medium", data: plexMedium, weight: 500 },
+      ],
+      headers,
+    });
+  }
+
   const night = uv.phase === "night";
   const value = night ? uv.outlook[0]?.max ?? null : uv.consensus.todayMax;
   const category = night ? whoCategory(value) : uv.consensus.category;
@@ -51,8 +88,6 @@ export async function GET(req: Request, ctx: { params: Promise<{ city: string }>
   const unit = width / 1080;
 
   const [jost, jostLight, mono] = await Promise.all([font("jost-400.woff"), font("jost-300.woff"), font("roboto-mono-400.woff")]);
-  const host = (process.env.NEXT_PUBLIC_SITE_URL ?? "uv-europe").replace(/^https?:\/\//, "").replace(/\/$/, "");
-
   const orb = `radial-gradient(ellipse ${40 * s}% ${82 * s}% at 42% 102%, ${rgba(sky.core, 1)} 0%, ${rgba(sky.core, 0)} 72%), radial-gradient(ellipse ${44 * s}% ${88 * s}% at 63% 104%, ${rgba(sky.mid, 1)} 0%, ${rgba(sky.mid, 0)} 74%), radial-gradient(ellipse ${66 * s}% ${125 * s}% at 55% 108%, ${rgba(sky.outer, 1)} 0%, ${rgba(sky.outer, 0)} 80%)`;
   const label = { fontFamily: "Roboto Mono", textTransform: "uppercase" as const, letterSpacing: 2 * unit, color: ink };
 
@@ -103,7 +138,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ city: string }>
         { name: "Jost Light", data: jostLight, weight: 300 },
         { name: "Roboto Mono", data: mono, weight: 400 },
       ],
-      headers: { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=3600" },
+      headers,
     },
   );
 }

@@ -48,7 +48,8 @@ export default async function Home() {
           ))}
         </ol>
         <p className="note" style={{ marginTop: "2rem" }}>
-          <Link href="/ground-truth">How accurate is this? We check satellite and forecasts against RIVM's ground station every day.</Link>
+          <Link href="/ground-truth">How accurate is this? We check satellite and forecasts against RIVM's ground station every day.</Link>{" "}
+          · <Link href="/share">Post today&apos;s UV to Instagram</Link>
         </p>
       </main>
     </div>

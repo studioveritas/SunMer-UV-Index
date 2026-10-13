@@ -1,0 +1,191 @@
+/*
+ * VIBRANT — trial look (A/B against "classic").
+ * Activated by <html data-look="vibrant">. Restyles the same markup:
+ * no content is added or removed, so the two looks test design only.
+ * After the reference: white paper, huge blurred colour fields, IBM Plex
+ * Mono throughout, oversized numerals that bleed off the edge, hairline
+ * rows, black circle-arrow actions.
+ */
+html[data-look="vibrant"] {
+  --paper: #fbfaf8;
+  --ink: #0d0d0d;
+  --muted: #5a5a5a;
+  --rule: rgba(13, 13, 13, 0.14);
+  --font-figure: "IBM Plex Mono", ui-monospace, monospace;
+  --font-label: "IBM Plex Mono", ui-monospace, monospace;
+  --gutter: clamp(1.1rem, 4.5vw, 3rem);
+  --measure: 64rem;
+}
+html[data-look="vibrant"] body { font-family: var(--font-figure); overflow-x: hidden; background: var(--paper); }
+
+/* ---------- The colour field ----------
+ * Lives in the root layout (outside the page), so it persists while you move
+ * between cities. Colours are registered properties: when a new page declares
+ * different values on :root, the browser animates to them (a morph, not a jump). */
+@property --va { syntax: "<color>"; inherits: true; initial-value: #8cc4ff; }
+@property --vb { syntax: "<color>"; inherits: true; initial-value: #ffe03a; }
+@property --vc { syntax: "<color>"; inherits: true; initial-value: #8c9bff; }
+:root { transition: --va 1.4s ease, --vb 1.4s ease, --vc 1.4s ease; }
+@media (prefers-reduced-motion: reduce) { :root { transition: none; } }
+
+body { position: relative; isolation: isolate; }
+.field-clip { position: absolute; inset: 0; overflow: hidden; z-index: -1; pointer-events: none; }
+.field, .field-low { display: none; }
+html[data-look="vibrant"] .sky { position: static; height: 0; background: none; animation: none; }
+html[data-look="vibrant"] .field {
+  display: block; position: absolute; left: -25%; right: -25%; top: -12vh; height: min(150vh, 1500px);
+  background:
+    radial-gradient(closest-side at 62% 30%, var(--va), transparent),
+    radial-gradient(closest-side at 28% 46%, var(--vb), transparent),
+    radial-gradient(closest-side at 70% 72%, var(--vc), transparent);
+  filter: blur(60px) saturate(1.25);
+  opacity: .92;
+  transition: opacity .8s ease;
+}
+html[data-look="vibrant"] .field-low {
+  display: block; position: absolute; left: -20%; right: -20%; bottom: -20vh; height: 80vh;
+  background: radial-gradient(closest-side at 30% 60%, var(--vc), transparent), radial-gradient(closest-side at 75% 40%, var(--va), transparent);
+  filter: blur(70px) saturate(1.2); opacity: .4;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[data-look="vibrant"] .field { animation: drift 18s ease-in-out infinite alternate; }
+  @keyframes drift { from { transform: translate3d(-2%, 0, 0) scale(1); } to { transform: translate3d(3%, 2%, 0) scale(1.06); } }
+}
+html[data-look="vibrant"] .stars { display: none; }
+html[data-look="vibrant"] .sky .status { position: absolute; top: calc(var(--gutter) * .9); left: var(--gutter); grid-auto-flow: column; gap: .45rem; z-index: 2; }
+html[data-look="vibrant"] .status li { width: .6rem; height: .6rem; border-color: var(--ink); }
+html[data-look="vibrant"] .status li.on { background: var(--ink) !important; border-color: var(--ink) !important; }
+html[data-look="vibrant"] .sky .back {
+  position: absolute; top: calc(var(--gutter) * .7); right: var(--gutter); z-index: 2;
+  display: inline-flex; align-items: center; gap: .55rem; font-size: .85rem; color: var(--ink) !important;
+}
+html[data-look="vibrant"] .sky .back::before {
+  content: "←"; display: grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%;
+  background: var(--ink); color: var(--paper); font-size: .95rem;
+}
+
+/* ---------- Type ---------- */
+html[data-look="vibrant"] .panel { padding-top: calc(var(--gutter) * 3.2); }
+html[data-look="vibrant"] .label { font-weight: 500; letter-spacing: .02em; font-size: .8rem; }
+html[data-look="vibrant"] .sublabel { font-size: .72rem; letter-spacing: .02em; }
+html[data-look="vibrant"] .note { font-size: .74rem; color: var(--muted); letter-spacing: 0; }
+html[data-look="vibrant"] .dots { display: none; }
+
+/* Hero headline: the reference's stacked uppercase title */
+html[data-look="vibrant"] .head { flex-direction: column-reverse; gap: .9rem; border-bottom: 1px solid var(--rule); padding-bottom: 1.4rem; }
+html[data-look="vibrant"] .head > .label { font-size: .8rem; }
+html[data-look="vibrant"] h1.label {
+  font-size: clamp(2.4rem, 9.5vw, 5.6rem); font-weight: 400; line-height: .94; letter-spacing: -.045em; text-transform: uppercase;
+  max-width: 14ch;
+}
+
+/* The number: oversized, light, bleeding off the right edge */
+html[data-look="vibrant"] .reading { grid-template-columns: 1fr; position: relative; margin: 1rem 0 2rem; min-height: clamp(11rem, 36vw, 24rem); }
+html[data-look="vibrant"] .big {
+  font-weight: 300; letter-spacing: -.08em; line-height: .78;
+  font-size: clamp(11rem, 44vw, 30rem); white-space: nowrap;
+  margin-right: calc(var(--gutter) * -3);
+  text-align: right;
+}
+html[data-look="vibrant"] .big small { font-size: .09em; letter-spacing: .02em; font-weight: 500; color: var(--ink); vertical-align: top; margin-left: .2em; }
+html[data-look="vibrant"] .glyph { position: absolute; left: 0; bottom: .4rem; width: clamp(5rem, 16vw, 8rem); }
+
+/* Values */
+html[data-look="vibrant"] .value { font-weight: 400; letter-spacing: -.04em; font-size: clamp(2rem, 6vw, 3.4rem); }
+html[data-look="vibrant"] .value small { font-size: .38em; letter-spacing: 0; }
+html[data-look="vibrant"] .pair { border-top: 1px solid var(--rule); padding-top: 1.1rem; }
+html[data-look="vibrant"] section.block { border-top: 1px solid var(--rule); padding-top: 1.1rem; }
+html[data-look="vibrant"] section.block.pair { padding-top: 1.1rem; }
+
+/* Gauges become hairline bars with a dot */
+html[data-look="vibrant"] .gauge { width: 3px; background: linear-gradient(to bottom, #e8002d, #ff7a1a 35%, #ffe03a 65%, #5ab8ff); }
+html[data-look="vibrant"] .gauge::after { left: -.4rem; right: -.4rem; height: .85rem; width: .85rem; border-radius: 50%; margin: 0 auto; transform: translateY(50%); }
+
+/* Bars */
+html[data-look="vibrant"] .bar { background: rgba(13,13,13,.06); border-radius: 999px; }
+html[data-look="vibrant"] .bar .fill { border-radius: 999px; background: linear-gradient(90deg, #5ab8ff, #ffe03a 40%, #ff7a1a 70%, #e8002d); }
+html[data-look="vibrant"] .bar .n { font-weight: 400; letter-spacing: -.05em; }
+
+/* Best-hours band */
+html[data-look="vibrant"] .band { border-radius: 999px; }
+html[data-look="vibrant"] .band .dark { background: #e7e4ef; }
+html[data-look="vibrant"] .band .low { background: #8cc4ff; }
+html[data-look="vibrant"] .band .moderate { background: #ffc23a; }
+html[data-look="vibrant"] .band .high { background: #ff3b30; }
+
+/* Controls: pill chips, black circle-arrow actions ("DETAILS →") */
+html[data-look="vibrant"] .chip { border-color: var(--ink); background: rgba(255,255,255,.55); backdrop-filter: blur(6px); font-weight: 500; }
+html[data-look="vibrant"] .action {
+  display: inline-flex; align-items: center; gap: .7rem; background: none; color: var(--ink); border: 0;
+  padding: .4rem 0; font-size: 1rem; font-weight: 500; letter-spacing: 0;
+}
+html[data-look="vibrant"] .action::after {
+  content: "→"; display: grid; place-items: center; width: 2.1rem; height: 2.1rem; border-radius: 50%;
+  background: var(--ink); color: var(--paper); font-size: 1rem;
+}
+html[data-look="vibrant"] .action.ghost::after { content: "×"; }
+
+/* Outlook: the reference's stacked day list with huge right-aligned numbers */
+html[data-look="vibrant"] .outlook { display: block; }
+html[data-look="vibrant"] .day {
+  display: grid; grid-template-columns: 1fr auto; align-items: end; text-align: left;
+  border-bottom: 1px solid var(--rule); padding: .2rem 0 .1rem;
+}
+html[data-look="vibrant"] .day .sublabel { align-self: end; padding-bottom: .9rem; font-weight: 500; text-transform: uppercase; }
+html[data-look="vibrant"] .day .orb { display: none; }
+html[data-look="vibrant"] .day .num { font-size: clamp(3.6rem, 13vw, 7rem); font-weight: 300; letter-spacing: -.07em; line-height: .95; margin: 0; }
+html[data-look="vibrant"] .day.clear .num { color: transparent; -webkit-text-stroke: 1.2px var(--ink); }
+
+/* City ranking (home): same oversized numbers */
+html[data-look="vibrant"] .cities li a { grid-template-columns: 1fr auto; padding: .35rem 0; }
+html[data-look="vibrant"] .cities .name { font-size: clamp(1rem, 2.4vw, 1.3rem); text-transform: uppercase; font-weight: 500; letter-spacing: 0; }
+html[data-look="vibrant"] .cities .track { grid-column: 1 / -1; order: 3; height: 3px; background: transparent; margin-bottom: .5rem; }
+html[data-look="vibrant"] .cities .track span { background: linear-gradient(90deg, #5ab8ff, #ffe03a 35%, #ff7a1a 65%, #e8002d); background-size: var(--full) 100%; }
+html[data-look="vibrant"] .cities .uv { font-size: clamp(3rem, 10vw, 5.6rem); font-weight: 300; letter-spacing: -.07em; line-height: 1; }
+
+/* Charts and tables */
+html[data-look="vibrant"] .curve text { font-family: var(--font-label); }
+html[data-look="vibrant"] .sources { font-size: .76rem; }
+html[data-look="vibrant"] footer { font-size: .68rem; }
+
+/* Skin chips keep their tones but get a hard ring */
+html[data-look="vibrant"] .skin[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink); }
+
+/* ---------- Night, vibrant: dark paper, the field glows ---------- */
+html[data-look="vibrant"] body:has(.page[data-phase="night"]) { --paper: #0b0a12; --ink: #f4f1ff; --muted: #a7a3c2; --rule: rgba(244,241,255,.16); }
+html[data-look="vibrant"] body:has(.page[data-phase="night"]) .field { opacity: .78; filter: blur(64px) saturate(1.4); }
+html[data-look="vibrant"] body:has(.page[data-phase="night"]) .field-low { opacity: .28; }
+
+/* ---------- Dusk, vibrant: warm paper, the field turns pink-violet ---------- */
+html[data-look="vibrant"] body:has(.page[data-phase="dusk"]) { --paper: #fcf6f8; --rule: rgba(40,10,40,.14); }
+html[data-look="vibrant"] body:has(.page[data-phase="dusk"]) .field { opacity: .88; }
+html[data-look="vibrant"] body:has(.page[data-phase="night"]) .chip { background: rgba(0,0,0,.3); }
+html[data-look="vibrant"] body:has(.page[data-phase="night"]) .bar .fill { background: linear-gradient(90deg, #2d63c8, #c99418 45%, #c8232d); }
+html[data-look="vibrant"] body:has(.page[data-phase="night"]) .band .dark { background: #1b1d30; }
+html[data-look="vibrant"] body:has(.page[data-phase="night"]) .band .low { background: #2d63c8; }
+
+@media (max-width: 560px) {
+  html[data-look="vibrant"] .reading { min-height: 12rem; }
+  html[data-look="vibrant"] .big { font-size: 52vw; margin-right: calc(var(--gutter) * -2.2); }
+  html[data-look="vibrant"] .pair { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- Look switch (trial only) ---------- */
+.look-switch { display: inline-flex; gap: .4rem; margin-left: .4rem; }
+.look-switch a { text-decoration: underline; }
+.look-switch a[aria-current="true"] { text-decoration: none; font-weight: 600; color: var(--ink); }
+html[data-look="vibrant"] .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+html[data-look="vibrant"] .big small { position: absolute; left: 0; top: .4rem; font-size: .8rem; text-transform: uppercase; }
+
+/* ---------- Colour words differ per look; both are in the page ---------- */
+.desc-vibrant { display: none; }
+html[data-look="vibrant"] .desc-classic { display: none; }
+html[data-look="vibrant"] .desc-vibrant { display: inline; }
+
+/* ---------- Today / Week ahead ---------- */
+html[data-look="vibrant"] .tabs { margin: 0 0 1.4rem; }
+html[data-look="vibrant"] .tabs button { font-weight: 500; }
+html[data-look="vibrant"] .week-head { letter-spacing: -.04em; text-transform: uppercase; font-size: clamp(1.8rem, 6vw, 3.4rem); line-height: 1; }
+html[data-look="vibrant"] .days .n { font-weight: 300; letter-spacing: -.07em; font-size: clamp(3rem, 11vw, 5.4rem); }
+html[data-look="vibrant"] .days .when { font-weight: 500; }
+html[data-look="vibrant"] .strip .stem { background: linear-gradient(to top, var(--vc), var(--vb) 55%, var(--va)); }

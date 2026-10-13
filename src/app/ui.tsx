@@ -4,10 +4,12 @@ import { orbColors, phaseSky } from "@/lib/palette";
 import { whoBand } from "@/lib/who";
 import { sunGlyph } from "@/lib/glyph";
 import { CORE_PROVIDERS, getProvider } from "@/lib/providers";
+import { vibrantColors, vibrantFor } from "@/lib/vibrant";
 
 export function orbStyle(uvi: number | null): CSSProperties {
   const c = orbColors(uvi);
-  return { ["--core" as string]: c.core, ["--mid" as string]: c.mid, ["--outer" as string]: c.outer, ["--s" as string]: c.scale };
+  const v = vibrantColors(uvi);
+  return { ["--core" as string]: c.core, ["--mid" as string]: c.mid, ["--outer" as string]: c.outer, ["--s" as string]: c.scale, ["--va" as string]: v.a, ["--vb" as string]: v.b, ["--vc" as string]: v.c };
 }
 
 /** Hero sky. The three dots are the three core national services: filled = reporting. */
@@ -16,6 +18,7 @@ export function Sky({ uvi, readings, phase = "day", children }: { uvi: number | 
   const style = { ["--core" as string]: p.core, ["--mid" as string]: p.mid, ["--outer" as string]: p.outer, ["--s" as string]: p.scale, ["--sky-now" as string]: p.sky };
   return (
     <header className="sky" style={style}>
+      <FieldColors uvi={uvi} phase={phase} />
       {phase === "night" && <span className="stars" aria-hidden />}
       {readings && (
         <ul className="status" aria-label="Core sources reporting">
@@ -28,6 +31,17 @@ export function Sky({ uvi, readings, phase = "day", children }: { uvi: number | 
       {children}
     </header>
   );
+}
+
+/**
+ * The vibrant colour field lives in the root layout, so it survives
+ * navigation between cities. Each page only declares its colours on :root;
+ * because the colours are registered properties, the browser animates from
+ * the last city's colours to this one's instead of jumping.
+ */
+export function FieldColors({ uvi, phase = "day" }: { uvi: number | null; phase?: "day" | "dusk" | "night" }) {
+  const v = vibrantFor(phase, uvi);
+  return <style>{`:root{--va:${v.a};--vb:${v.b};--vc:${v.c}}`}</style>;
 }
 
 export function PaletteDots() {

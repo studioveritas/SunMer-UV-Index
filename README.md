@@ -1,4 +1,4 @@
-# UV Europe (v0.3)
+# UV Europe (v0.5)
 
 A Next.js 16 web app that reports today's UV index for 20 European cities,
 cross-checked across national meteorological services.
@@ -85,6 +85,72 @@ is available.
 | Copernicus CAMS via Open-Meteo | Cloud-adjusted, hourly | Only for commercial use | 60 min | Attribution to CAMS + Open-Meteo required |
 | DWD UV-Gefahrenindex | Cloud-adjusted daily max | No | 3 h | Station-based; matched by German name |
 | Météo-France UV API | Cloud-adjusted daily max | Yes | 3 h | **Off until endpoint is confirmed** — see `meteoFrance.ts` |
+
+## New in v0.5
+
+**Vibrant colour follows UV.** The field runs blue at low UV, lemon and sky
+blue at moderate, oranges at high, reds at very high, crimson and magenta
+at extreme (`src/lib/vibrant.ts`). Bars, gauges, the run band and the
+Instagram cards use the same scale.
+
+**Day, dusk, night in both looks.** Phase comes from the sun's height over
+each city: above 6° day; 6° to −6° dusk (golden hour and civil twilight),
+when the vibrant field turns pink-violet; below −6° night, with near-black
+paper, an indigo-violet field that keeps one blob in the day's UV colour,
+stars, a crescent, and the headline switched to tomorrow. Pages are cached
+for 15 minutes, so the phase can lag the real sky by up to that.
+Force a phase for review with `UV_PHASE=day|dusk|night` (set at build time
+for pages, at runtime for cards).
+
+**Today / Week ahead.** Each city page has a tab switch (`#week` links
+straight to the week). The week view shows a one-line read of the week,
+highest, lowest, protect days, a bar per day coloured by its level, and a
+day-by-day list with protection hours and sunset (`src/lib/week.ts`).
+Days beyond any cloud forecast are drawn as outlines ("cloud-free
+potential"); "Strongest" prefers days with a real cloud forecast. Protection
+hours use the hourly forecast where one exists, otherwise a clear-sky curve
+that follows the sun's height.
+
+**Week ahead Instagram card.** `/api/card/:city?kind=week&format=story|post`
+draws seven coloured bars on a field set by the week's strongest day, in
+either look and any sky. Download it from the Week ahead tab or from
+`/share`. Made for Monday posting.
+
+**Colour morph between cities.** The vibrant field now lives in the root
+layout and persists across navigation. Each page only declares its colours
+on `:root`; the colours are registered CSS properties (`@property`), so the
+browser animates from one city's colours to the next over 1.4 s. Turned
+off for people who prefer reduced motion.
+
+## v0.4: "Vibrant" design trial + Instagram downloads
+
+**Two looks, same content.** `classic` (the sunset reference) and
+`vibrant` (bright blurred colour fields on white, IBM Plex Mono throughout,
+oversized numerals bleeding off the edge, hairline rows, black
+circle-arrow actions). Vibrant is a stylesheet over the same markup
+(`src/app/vibrant.css`), so nothing in the content differs between arms.
+
+How a visitor gets a look, decided before first paint:
+1. `?look=classic` or `?look=vibrant` in the URL;
+2. the look this browser was already given (testers stay in one arm);
+3. `NEXT_PUBLIC_LOOK` = `classic` | `vibrant` | `split` (default `split`:
+   random 50/50, then kept).
+The look is on `<html data-look>` and `window.uvLook` — pass it to your
+analytics as a property to compare arms. A switch in the footer lets you flip.
+
+The vibrant colours still carry the reading: violet/lemon when low,
+gold/orange at moderate, orange/red when high, red/magenta very high,
+magenta/violet extreme.
+
+**Download today's UV for Instagram.** Every city page has "Post today's
+UV" with live previews and two buttons: Instagram Story (1080×1920) and
+Instagram Post (1080×1350, 4:5). On phones the share sheet opens (save to
+Photos or post straight to Instagram); on desktop the PNG downloads.
+`/share` lists every city with both downloads — public, no login, for the
+admin and anyone else. Direct links work too:
+`/api/card/:city?format=story|post&look=vibrant&download=1`.
+Story cards keep text out of the top and bottom ~250px that Instagram
+covers with its own controls.
 
 ## New in v0.3
 
