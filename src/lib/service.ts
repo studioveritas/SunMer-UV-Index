@@ -28,7 +28,7 @@ export async function getCityUv(city: City): Promise<CityUv> {
   const [readings, observed] = await Promise.all([
     Promise.all(
       PROVIDERS.map((p): Promise<UvReading> => {
-        if (!p.covers(city)) return Promise.resolve(emptyReading(p.meta, "not_covered"));
+        if (!p.covers(city) || city.skip?.includes(p.meta.id)) return Promise.resolve(emptyReading(p.meta, "not_covered"));
         if (!p.isConfigured()) return Promise.resolve(emptyReading(p.meta, "not_configured"));
         return p.fetchCity(city); // adapters never throw; failures become status "error"
       }),

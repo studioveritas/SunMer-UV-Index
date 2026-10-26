@@ -21,7 +21,7 @@ const stamp = (d: Date, tz: string) => {
  * The renderer has no blur filter, so softness comes from stacked radial
  * gradients that fade to the same colour at zero alpha.
  */
-export function VibrantCard({ uv, width, height, host }: { uv: CityUv; width: number; height: number; host: string }) {
+export function VibrantCard({ uv, width, height, host, badge }: { uv: CityUv; width: number; height: number; host: string; badge?: string }) {
   const { city } = uv;
   const night = uv.phase === "night";
   const day = night && uv.outlook[0] ? new Date(`${uv.outlook[0].date}T12:00:00Z`) : new Date();
@@ -64,7 +64,7 @@ export function VibrantCard({ uv, width, height, host }: { uv: CityUv; width: nu
           <div style={{ display: "flex", flexDirection: "column", fontFamily: "Plex Mono", fontSize: 64 * h, lineHeight: 1, letterSpacing: -3 * h, color: ink, textTransform: "uppercase" }}>
             <div style={{ display: "flex", alignItems: "flex-start" }}>
               {stamp(day, city.tz)}
-              <span style={{ fontFamily: "Plex Mono Medium", fontSize: 18 * h, letterSpacing: 0, marginLeft: 16 * h, marginTop: 10 * h }}>({city.country})</span>
+              <span style={{ fontFamily: "Plex Mono Medium", fontSize: 18 * h, letterSpacing: 0, marginLeft: 16 * h, marginTop: 10 * h }}>({badge ?? city.country})</span>
             </div>
             <div style={{ display: "flex" }}>{city.name}</div>
             <div style={{ display: "flex" }}>Peak UV index</div>
@@ -99,7 +99,7 @@ export function VibrantCard({ uv, width, height, host }: { uv: CityUv; width: nu
       <div style={{ display: "flex", flexDirection: "column", marginTop: (tall ? 90 : 56) * u, fontFamily: "Plex Mono", fontSize: (tall ? 112 : 96) * u, lineHeight: 0.98, letterSpacing: -6 * u, color: ink, textTransform: "uppercase" }}>
         <div style={{ display: "flex", alignItems: "flex-start" }}>
           {stamp(day, city.tz)}
-          <span style={{ fontFamily: "Plex Mono Medium", fontSize: 22 * u, letterSpacing: 0, marginLeft: 24 * u, marginTop: 18 * u }}>({city.country})</span>
+          <span style={{ fontFamily: "Plex Mono Medium", fontSize: 22 * u, letterSpacing: 0, marginLeft: 24 * u, marginTop: 18 * u }}>({badge ?? city.country})</span>
         </div>
         <div style={{ display: "flex" }}>{city.name}</div>
         <div style={{ display: "flex" }}>Peak (*) UV</div>

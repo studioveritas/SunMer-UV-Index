@@ -29,6 +29,8 @@ export interface City {
   tz: string; // IANA timezone, used to decide what "today" means locally
   /** Station names as they appear in DWD's uvi.json (German spelling). */
   dwdNames?: string[];
+  /** Providers not to call for this place (e.g. Met Office quota is reserved for cities). */
+  skip?: ProviderId[];
 }
 
 export interface DailyValue {

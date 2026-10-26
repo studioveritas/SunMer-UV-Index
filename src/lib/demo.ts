@@ -40,7 +40,7 @@ export function demoCityUv(city: City): CityUv {
   const today = localDate(new Date(), city.tz);
 
   const readings: UvReading[] = PROVIDERS.map((p) => {
-    if (!p.covers(city) || p.meta.id === "meteo-france") return emptyReading(p.meta, p.covers(city) ? "not_configured" : "not_covered");
+    if (!p.covers(city) || city.skip?.includes(p.meta.id) || p.meta.id === "meteo-france") return emptyReading(p.meta, p.covers(city) ? "not_configured" : "not_covered");
     const clear = p.meta.kind === "clear-sky";
     const days = { "met-office": 2, cams: 5, dwd: 3, "knmi-temis": 6, "met-norway": 7 }[p.meta.id as string] ?? 3;
     let hourly: HourlyValue[] = [];

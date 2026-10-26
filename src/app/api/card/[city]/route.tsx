@@ -3,6 +3,8 @@ import path from "node:path";
 import { ImageResponse } from "next/og";
 import { getCity } from "@/lib/config/cities";
 import { getCityUv } from "@/lib/service";
+import { getSpot } from "@/lib/config/spots";
+import { getSpotUv } from "@/lib/spotService";
 import { DESCRIPTOR, displayDate, displayTime, phaseSky } from "@/lib/palette";
 import { moonGlyphSvg, sunGlyphSvg } from "@/lib/glyph";
 import { whoCategory } from "@/lib/who";
@@ -37,7 +39,8 @@ const svgSrc = (svg: string) => `data:image/svg+xml;utf8,${encodeURIComponent(sv
  */
 export async function GET(req: Request, ctx: { params: Promise<{ city: string }> }) {
   const { city: slug } = await ctx.params;
-  const city = getCity(slug);
+  const spot = getSpot(slug);
+  const city = getCity(slug) ?? spot;
   if (!city) return new Response("Unknown city", { status: 404 });
   const params = new URL(req.url).searchParams;
   const format = (params.get("format") ?? "story") as keyof typeof FORMATS;
@@ -46,7 +49,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ city: string }>
   const download = params.get("download") === "1";
   const kind = params.get("kind") === "week" ? "week" : "day";
 
-  const uv = await getCityUv(city);
+  const uv = spot ? (await getSpotUv(spot)).uv : await getCityUv(city);
+  // Spots carry their sport or altitude in the badge next to the date.
+  const badge = spot ? (spot.kind === "ski" ? `${(spot.slopes ?? spot.base).toLocaleString("en-GB")} M` : spot.kind.toUpperCase()) : undefined;
   const host = (process.env.NEXT_PUBLIC_SITE_URL ?? "uv-europe").replace(/^https?:\/\//, "").replace(/\/$/, "");
   const date = new Intl.DateTimeFormat("en-CA", { timeZone: city.tz }).format(new Date());
   const headers: Record<string, string> = { "Cache-Control": "public, s-maxage=900, stale-while-revalidate=3600" };
@@ -63,7 +68,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ city: string }>
 
   if (look === "vibrant") {
     const [plex, plexLight, plexMedium] = await Promise.all([font("plex-mono-400.woff"), font("plex-mono-300.woff"), font("plex-mono-500.woff")]);
-    return new ImageResponse(<VibrantCard uv={uv} width={width} height={height} host={host} />, {
+    return new ImageResponse(<VibrantCard uv={uv} width={width} height={height} host={host} badge={badge} />, {
       width,
       height,
       fonts: [

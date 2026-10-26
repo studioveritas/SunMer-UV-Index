@@ -4,6 +4,8 @@ import { displayDate } from "@/lib/palette";
 import { PaletteDots, Sky } from "./ui";
 import { getCity } from "@/lib/config/cities";
 import { sunInfo } from "@/lib/service";
+import { ModeNav } from "./components/ModeNav";
+import { SEASON_COPY, seasonFor } from "@/lib/season";
 
 export const revalidate = 900;
 
@@ -12,6 +14,7 @@ export default async function Home() {
   const ranked = [...cities].sort((a, b) => (b.consensus.todayMax ?? -1) - (a.consensus.todayMax ?? -1));
   const top = ranked[0]?.consensus.todayMax ?? null;
   const { phase } = sunInfo(getCity("amsterdam")!);
+  const season = SEASON_COPY[seasonFor(new Date())];
 
   return (
     <div className="page" data-phase={phase}>
@@ -24,6 +27,12 @@ export default async function Home() {
           </div>
           <p className="label">{displayDate(new Date(), "Europe/Amsterdam")}</p>
         </div>
+
+        <ModeNav active="cities" />
+        <p className="season-note">
+          <span className="label">{season.name}</span>{" "}
+          <Link href={`/${season.lead}`}>{season[season.lead]}</Link>
+        </p>
 
         <ol className="cities">
           {ranked.map(({ city, consensus }) => (

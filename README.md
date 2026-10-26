@@ -1,4 +1,4 @@
-# UV Europe (v0.5)
+# UV Europe (v0.7)
 
 A Next.js 16 web app that reports today's UV index for 20 European cities,
 cross-checked across national meteorological services.
@@ -221,3 +221,36 @@ ISR-cached for 15 minutes.
   register it in `providers/index.ts`, add a parser test.
 - **Creative:** all visual decisions are CSS custom properties in
   `globals.css`. Keep the WHO colour tokens semantic.
+
+
+## v0.7: Sea & Snow (seasonal, sport-focused)
+
+**Three modes**: Cities (`/`), Sea (`/sea`), Snow (`/snow`). Each spot has its
+own page at `/spot/:slug` with Today / Week ahead, burn time, lowest-UV hours,
+kit and an Instagram card (`/api/card/:slug` works for spots too).
+
+- **Sea**: 22 surf and beach spots: 12 UK (Fistral, Croyde, Llangennith,
+  Freshwater West, Thurso East, Portrush...), 10 France (Hossegor, Seignosse,
+  Biarritz, Anglet, Guéthary, Lacanau, La Torche, Pampelonne...). Shows sea
+  temperature, waves, wetsuit and the skin it leaves exposed.
+- **Snow**: 24 ski resorts: 8 France, 8 Austria, 8 Italy, with village,
+  slopes and summit altitudes and glacier flags.
+- **Season** (`src/lib/season.ts`): autumn and winter lead with Snow, summer
+  with Sea; copy changes by season on every page.
+
+**Exposure model** (`src/lib/exposure.ts`), three effects kept apart:
+1. Altitude: 8% per 1,000 m above the village (published range 5–12%,
+   shown on the page). Forecast grids smooth mountains away, so the forecast
+   is assumed to represent the village altitude (`ref` in `spots.ts`).
+2. Snow raises the index (NIWA: 1 + 0.4·albedo·e^(−alt/7.65), < 30%).
+3. Face dose: a vertical face sees half the ground, so reflected UV adds
+   ½ × albedo. Burn time on spot pages uses the face dose.
+
+Conditions come from Open-Meteo: snow depth and 48 h snowfall at slope
+height (`elevation=` downscaling) and the Marine API for waves and sea
+temperature (`src/lib/providers/conditions.ts`). Failures fall back to
+"settled snow" for glaciers and "no snow" elsewhere; UV never depends on them.
+
+**Quota**: spots skip Met Office (its free 360 calls/day stays with the 20
+cities). Spots use KNMI/TEMIS, CAMS and MET Norway. 46 spots add roughly
+2,200 Open-Meteo calls a day at the 60-minute cache, inside the free 10,000.

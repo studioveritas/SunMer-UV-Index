@@ -189,3 +189,37 @@ html[data-look="vibrant"] .week-head { letter-spacing: -.04em; text-transform: u
 html[data-look="vibrant"] .days .n { font-weight: 300; letter-spacing: -.07em; font-size: clamp(3rem, 11vw, 5.4rem); }
 html[data-look="vibrant"] .days .when { font-weight: 500; }
 html[data-look="vibrant"] .strip .stem { background: linear-gradient(to top, var(--vc), var(--vb) 55%, var(--va)); }
+
+/* ---- v0.7 Sea & Snow ---------------------------------------------------- */
+.modes { margin: 1.4rem 0 0; }
+.modes a { border-radius: 99px; padding: .55rem 1.2rem; font-family: var(--font-label); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; text-decoration: none; color: inherit; }
+.modes a[aria-current="page"] { background: var(--ink); color: var(--paper); }
+html[data-look="vibrant"] .modes { margin: 1.4rem 0 0; }
+html[data-look="vibrant"] .modes a { font-weight: 500; }
+.season-note { margin: 1.4rem 0 .5rem; max-width: 40rem; line-height: 1.45; }
+.season-note .label { margin-right: .6rem; }
+.spot-group { margin-top: 2.2rem; }
+.spot-group > h2 { margin: 0 0 .4rem; }
+.spot-group .cities { margin-top: .4rem; }
+.cities .spot-meta { display: block; font-family: var(--font-label); font-size: .7rem; color: var(--muted); letter-spacing: .02em; text-transform: none; font-weight: 400; margin-top: .15rem; }
+.spot-intro { margin: 1.2rem 0 1.6rem; line-height: 1.45; max-width: 40rem; }
+.spot-intro .label { display: block; margin-bottom: .3rem; }
+.ladder { list-style: none; margin: 0; padding: 0; }
+.ladder li { display: grid; grid-template-columns: 6.5rem 5.5rem 1fr 3.5ch; align-items: center; gap: .9rem; padding: .7rem 0; border-top: 1px solid var(--rule); font-family: var(--font-label); }
+.ladder .rung-name { text-transform: uppercase; font-weight: 500; font-size: .82rem; }
+.ladder .rung-m { color: var(--muted); font-size: .78rem; }
+.ladder .rung-bar { height: 3px; }
+.ladder .rung-bar span { display: block; height: 100%; width: var(--w); background: linear-gradient(90deg, #5ab8ff, #ffe03a 35%, #ff7a1a 65%, #e8002d); }
+.ladder .rung-uv { font-size: 1.9rem; font-weight: 300; text-align: right; letter-spacing: -.05em; }
+.kit { margin: 0; }
+.kit div { display: grid; grid-template-columns: 7.5rem 1fr; gap: 1rem; padding: .6rem 0; border-top: 1px solid var(--rule); font-family: var(--font-label); font-size: .82rem; }
+.kit dt { text-transform: uppercase; font-weight: 500; }
+.kit dd { margin: 0; }
+.season-line { max-width: 40rem; line-height: 1.45; margin: 0; }
+@media (max-width: 560px) {
+  .ladder li { grid-template-columns: 5.2rem 1fr 3.5ch; }
+  .ladder .rung-bar { grid-column: 1 / -1; order: 4; }
+  .kit div { grid-template-columns: 6rem 1fr; }
+}
+/* The oversized numeral bleeds off the edge by design; never let it scroll the page sideways. */
+html[data-look="vibrant"] body { overflow-x: clip; }
