@@ -140,7 +140,7 @@ export default async function CityPage({ params }: { params: Promise<{ slug: str
 
         <section className="block pair" aria-label="Conditions">
           <Gauge label="Cloud-free sky" value={c.clearSky.median} display={c.clearSky.median ?? "–"} />
-          <Gauge label="Cloud takes off" value={c.cloudEffect} display={c.cloudEffect !== null ? `−${c.cloudEffect}` : "–"} max={6} />
+          <Gauge label="Cloud takes off" value={c.cloudEffect} display={c.cloudEffect ? `−${c.cloudEffect}` : c.cloudEffect === 0 ? "0" : "–"} max={6} />
           <Gauge label="Sources" value={AGREEMENT_LEVEL[c.confidence]} display={`${AGREEMENT[c.confidence]}, ${c.sourcesOk}`} max={10} />
           <Gauge label="Peak so far" value={observed.peakSoFar} display={observed.peakSoFar ?? "–"} />
         </section>

@@ -145,7 +145,7 @@ export default async function SpotPage({ params }: { params: Promise<{ slug: str
                   <Gauge label="Sea" value={cond.seaC !== null ? Math.min(10, cond.seaC / 2.6) : null} display={cond.seaC !== null ? `${Math.round(cond.seaC)}°C` : "–"} max={10} />
                   <Gauge label={spot.kind === "surf" ? "Waves" : "Swell"} value={cond.waveM !== null ? Math.min(10, cond.waveM * 3) : null} display={cond.waveM !== null ? `${cond.waveM} m${cond.wavePeriodS ? `, ${Math.round(cond.wavePeriodS)} s` : ""}` : "–"} max={10} />
                   <Gauge label="Reflection" value={albedo * 20} display={`${Math.round(albedo * 100)}%`} max={10} />
-                  <Gauge label="Cloud takes off" value={c.cloudEffect} display={c.cloudEffect !== null ? `−${c.cloudEffect}` : "–"} max={6} />
+                  <Gauge label="Cloud takes off" value={c.cloudEffect} display={c.cloudEffect ? `−${c.cloudEffect}` : c.cloudEffect === 0 ? "0" : "–"} max={6} />
                 </>
               )}
             </section>
